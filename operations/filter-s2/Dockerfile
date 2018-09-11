@@ -21,5 +21,5 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 ADD . /usr/src/app
 
-CMD /bin/bash -c "source activate condaenv && python main.py"
+CMD /bin/bash -c "source activate condaenv && python app.py"
 # CMD python app.py
