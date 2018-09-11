@@ -36,19 +36,19 @@ parameters:
   required: true
 - name: HOST
   displayName: HOST URL
-  value: 
+  value:
 - name: CONTACT_NAME
   displayName: Name of Organization
-  value: 
+  value:
 - name: CONTACT_URL
   displayName: URL of Organization
-  value: 
+  value:
 - name: CONTACT_EMAIL
   displayName: Email of Organization
-  value: 
+  value:
 - name: GATEWAY_URL
   displayName: GATEWAY URL (Internal OpenShift)
-  value: 
+  value:
   required: true
 - name: GIT_URI
   displayName: Git URI

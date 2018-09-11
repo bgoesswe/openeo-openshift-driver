@@ -65,14 +65,14 @@ def generate_api(gateway):
     )
 
     from .index import Index
-    from .health import HealthApi                               #, ServiceHealthApi
+    from .health import HealthApi #, ServiceHealthApi
     from .auth import RegisterApi, LoginApi
     from .data import RecordsApi, ProductDetailApi
     from .processes import ProcessApi, ProcessDetailApi
     from .jobs import JobsApi, JobDetailApi,BatchJobApi, DownloadApi, DownloadFileApi
 
     api.add_resource(Index, "/")
-    api.add_resource(HealthApi, "/health")
+    # api.add_resource(HealthApi, "/health")
     # api.add_resource(ServiceHealthApi, "/health/services")
     api.add_resource(RegisterApi, "/auth/register")
     api.add_resource(LoginApi, "/auth/login")

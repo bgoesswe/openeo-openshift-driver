@@ -36,10 +36,11 @@ class Index(Resource):
     def get(self):
         capabilities = [
             "/",
-            "/health",
-            "/health/services",
+            # "/health",
+            # "/health/services",
             "/auth/register",
             "/auth/login",
+            "/data",
             "/data/<string:product_id>",
             "/processes",
             "/processes/<string:process_id>",

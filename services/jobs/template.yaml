@@ -52,6 +52,18 @@ parameters:
   displayName: Memory Limit
   value: 512Mi
   required: true
+- name: MEMORY_LIMIT_SERVICE
+  displayName: Memory Limit
+  value: 512Mi
+  required: true
+- name: SA_TOKEN
+  displayName: Service Account Token
+  value: 
+  required: true
+- name: OPENSHIFT_PROJECT
+  displayName: Execution Environment (Project)
+  value: 
+  required: true
 
 ### DATABASE ####
 - name: POSTGRESQL_VERSION
@@ -163,6 +175,10 @@ objects:
           env:
           - name: SECRET
             value: "${SECRET}"
+          - name: SA_TOKEN
+            value: "${SA_TOKEN}"
+          - name: OPENSHIFT_PROJECT
+            value: "${OPENSHIFT_PROJECT}"
           - name: DB_HOST
             value: "${SERVICE_PREFIX}-${SERVICE_NAME}-db"
           - name: DB_USER

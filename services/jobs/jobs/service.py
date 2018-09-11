@@ -88,7 +88,7 @@ class JobService:
 
             data_filter = tasks[0]
 
-            pvc = self.data_service.prepare_pvc(data_filter)["data"]
+            # pvc = self.data_service.prepare_pvc(data_filter)["data"]
 
             # TODO: Implement in Extraction Service
             filter = tasks[0]
