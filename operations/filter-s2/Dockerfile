@@ -15,7 +15,7 @@ FROM continuumio/miniconda3:latest
 
 # ENV PATH /opt/conda/bin:$PATH
 
-RUN conda env create -n condaenv -c conda-forge python=3.6 gdal
+RUN conda create -n condaenv -c conda-forge python=3.6 gdal 
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
