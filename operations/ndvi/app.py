@@ -19,6 +19,9 @@ def perform_ndvi():
     print("-> Start calculating NDVI...")
     for file_path in LAST_CONFIG["file_paths"]:
         filename = file_path.split("/")[-1]
+        if filename == "files.json":
+            continue
+        
         file_date = filename.split("_")[1]
 
         # Open input dataset
