@@ -108,7 +108,7 @@ class JobService:
 
             bbox = [top, left, bottom, right]
 
-            job.status = "c"
+            job.status = "{0}, {1}".format(str(job.id), job_id)
             self.db.commit()
 
             # in_proj = Proj(init=srs)
