@@ -37,7 +37,7 @@ def generate_api(gateway):
         api_version='0.0.2',
         host=environ.get("HOST"),
         title="openEO API",
-        # api_spec_url= "/spec/swagger.json",
+        api_spec_url= "/spec/swagger",
         base_path="/api/v0.0.2/",
         description="API implementation of openEO",
         contact={
