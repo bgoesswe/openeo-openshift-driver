@@ -29,7 +29,7 @@ class RecordsApi(Resource):
         methods=["GET"],
         headers=["Authorization", "Content-Type"],
         credentials=True)
-    @auth()
+    # @auth() # TODO: Activate as soon as available in Python client
     @swagger.doc({
         "tags": ["EO Data Discovery"],
         "description": "Returns basic information about EO datasets that are available at the back-end.",
@@ -80,7 +80,7 @@ class ProductDetailApi(Resource):
         methods=["GET"],
         headers=["Authorization", "Content-Type"],
         credentials=True)
-    @auth()
+    # @auth() # TODO: Activate as soon as available in Python client
     @swagger.doc({
         "tags": ["EO Data Discovery"],
         "description": "Returns basic information about EO datasets that are available at the back-end.",

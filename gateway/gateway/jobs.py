@@ -32,7 +32,7 @@ class JobsApi(Resource):
         methods=["POST"],
         headers=["Authorization", "Content-Type"],
         credentials=True)
-    @auth(admin=True)
+    @auth()
     @swagger.doc({
         "tags": ["Job Management"],
         "description": (

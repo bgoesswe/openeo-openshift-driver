@@ -66,7 +66,7 @@ class ProcessApi(Resource):
         methods=["GET", "POST"], 
         headers=["Authorization", "Content-Type"], 
         credentials=True)
-    @auth()
+    # @auth() # TODO: Activate as soon as available in Python client
     @swagger.doc({
         "tags": ["Process Discovery"],
         "description": "Returns processes supported by the back-end.",
@@ -111,7 +111,7 @@ class ProcessDetailApi(Resource):
         methods=["GET"], 
         headers=["Authorization", "Content-Type"], 
         credentials=True)
-    @auth()
+    # @auth() # TODO: Activate as soon as available in Python client
     @swagger.doc({
         "tags": ["Process Discovery"],
         "description": "Returns further information on a given EO process available at the back-end.",
