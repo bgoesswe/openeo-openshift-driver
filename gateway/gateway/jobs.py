@@ -4,7 +4,7 @@ from flask_restful_swagger_2 import Resource, swagger, Schema #TODO: Delete?
 from flask_restful.reqparse import RequestParser
 from flask_restful.utils import cors
 from flask import send_from_directory
-from os import path, listdir
+from os import path, listdir, environ
 
 from . import rpc
 from .src.auth import auth
@@ -189,12 +189,12 @@ class DownloadApi(Resource):
             # if rpc_response["status"] == "error":
             #     raise self.__res_parser.map_exceptions(rpc_response["exc_key"])
 
-            job_directory = "c:/job_results/{0}".format(54)
+            job_directory = "/job_results/{0}".format(job_id)
             files_in_dir = listdir(job_directory)
 
             output = []
             for file_name in files_in_dir:
-                output.append("http://127.0.0.1:3000/download/{0}/{1}".format(job_id, file_name))
+                output.append("{0}/download/{1}/{2}".format(environ.get("GATEWAY_URL"), job_id, file_name))
 
             return self.__res_parser.data(200, output)
         except Exception as exc:
@@ -217,10 +217,10 @@ class DownloadFileApi(Resource):
         methods=["GET"],
         headers=["Authorization", "Content-Type"],
         credentials=True)
-    # @auth()
+    @auth()
     def get(self, job_id, file_name):
         try:
-            job_directory = "c:/job_results/{0}".format(54)
+            job_directory = "/job_results/{0}".format(job_id)
             return send_from_directory(directory=job_directory, filename=file_name)
         except Exception as exc:
             return self.__res_parser.error(exc)

@@ -176,11 +176,18 @@ objects:
           resources:
             limits:
               memory: "${MEMORY_LIMIT_SERVICE}"
+          volumeMounts:
+          - name: vol-${SERVICE_PREFIX}-${SERVICE_NAME}
+            mountPath: "/job_results"
           terminationMessagePath: "/dev/termination-log"
           imagePullPolicy: Always
           securityContext:
             capabilities:
             privileged: false
+        volumes:
+        - name: vol-${SERVICE_PREFIX}-${SERVICE_NAME}
+          persistentVolumeClaim:
+            claimName: pvc-results
         restartPolicy: Always
         dnsPolicy: ClusterFirst
 

@@ -43,11 +43,15 @@ parameters:
   displayName: Git Directory
   value: services/jobs
   required: true
-- name: SECRET
-  displayName: Secret for Password Hashing
-  from: "[a-zA-Z0-9]{16}"
-  generate: expression
-  required: true
+- name: OPENSHIFT_API
+  displayName: URI to OpenShift master server
+  value: 
+- name: HAWKULAR_API
+  displayName: URI to HAWKULAR endpoint
+  value: 
+- name: VERIFY
+  displayName: Verify SSL
+  value: "true"
 - name: MEMORY_LIMIT_SERVICE
   displayName: Memory Limit
   value: 512Mi
@@ -173,12 +177,16 @@ objects:
         - name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
           image: "${SERVICE_PREFIX}-${SERVICE_NAME}"
           env:
-          - name: SECRET
-            value: "${SECRET}"
           - name: SA_TOKEN
             value: "${SA_TOKEN}"
           - name: OPENSHIFT_PROJECT
             value: "${OPENSHIFT_PROJECT}"
+          - name: OPENSHIFT_API
+            value: "${OPENSHIFT_API}"
+          - name: HAWKULAR_API
+            value: "${HAWKULAR_API}"
+          - name: VERIFY
+            value: "${VERIFY}"
           - name: DB_HOST
             value: "${SERVICE_PREFIX}-${SERVICE_NAME}-db"
           - name: DB_USER

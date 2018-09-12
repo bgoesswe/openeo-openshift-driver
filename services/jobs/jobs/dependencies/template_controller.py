@@ -42,7 +42,7 @@ class TemplateControllerWrapper:
         # log += obj_job.get_logs(api_connector) # NOt needed for v0.0.2
         # metrics = obj_job.get_metrics(api_connector) # TODO: Metrics Error Bug Fixing -> Process to fast executed for metrics
 
-        obj_job.delete(api_connector) # TODO: Deactivated just for showcasing
+        # obj_job.delete(api_connector) # TODO: Deactivated this just for showcasing (so the pods stay in OpenShift)
         
         return "Finished Deploying", log, []
 
