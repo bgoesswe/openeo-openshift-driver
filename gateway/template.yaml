@@ -150,6 +150,10 @@ objects:
           env:
           - name: GATEWAY_SETTINGS
             value: "${GATEWAY_SETTINGS}"
+          - name: HOST
+            value: "${HOST}"
+          - name: GATEWAY_URL
+            value: "${GATEWAY_URL}"
           - name: CONTACT_NAME
             value: "${CONTACT_NAME}"
           - name: CONTACT_URL

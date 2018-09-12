@@ -194,7 +194,7 @@ class DownloadApi(Resource):
 
             output = []
             for file_name in files_in_dir:
-                output.append("{0}/download/{1}/{2}".format(environ.get("GATEWAY_URL"), job_id, file_name))
+                output.append("http://{0}/download/{1}/{2}".format(environ.get("GATEWAY_URL"), job_id, file_name))
 
             return self.__res_parser.data(200, output)
         except Exception as exc:
@@ -217,7 +217,7 @@ class DownloadFileApi(Resource):
         methods=["GET"],
         headers=["Authorization", "Content-Type"],
         credentials=True)
-    @auth()
+    # @auth() # Temporary!
     def get(self, job_id, file_name):
         try:
             job_directory = "/job_results/{0}".format(job_id)
