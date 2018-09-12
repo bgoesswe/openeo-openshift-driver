@@ -81,18 +81,12 @@ class JobService:
             tasks = self.db.query(Task).filter_by(job_id=job_id).all()
             processes = self.process_service.get_all_processes_full()["data"]
 
-            job.status = "a"
-            self.db.commit()
-
             tasks = sorted(tasks, key=lambda task: task.seq_num)
 
             job.status = "running"
             self.db.commit()
 
             data_filter = tasks[0]
-
-            job.status = "b"
-            self.db.commit()
             # pvc = self.data_service.prepare_pvc(data_filter)["data"]
 
             # TODO: Implement in Extraction Service
@@ -108,8 +102,7 @@ class JobService:
 
             bbox = [top, left, bottom, right]
 
-            job.status = "{0}, {1}".format(str(job.id), job_id)
-            self.db.commit()
+            
 
             # in_proj = Proj(init=srs)
             # out_proj = Proj(init='epsg:4326')
@@ -122,24 +115,19 @@ class JobService:
             file_paths = self.data_service.get_records(qtype="file_paths", qname=product, qgeom=bbox, qstartdate=start, qenddate=end)["data"]
             tasks[0].args["file_paths"] = file_paths
 
-            job.status = "d"
+            job.status = "{0}, {1}".format(str(job.id), job_id)
             self.db.commit()
 
             pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + str(job.id), "storage-write", "5Gi")     # TODO: Calculate storage size and get storage class
             previous_folder = None
             for idx, task in enumerate(tasks):
                 try:
-                    job.status = "e"
-                    self.db.commit()
                     template_id = "{0}-{1}".format(job.id, task.id)
 
                     for p in processes:
                         if p["process_id"] == task.process_id:
                             process = p
 
-                    job.status = "f"
-                    self.db.commit()
-                    
                     config_map = self.template_controller.create_config(
                         self.api_connector, 
                         template_id, 
@@ -149,13 +137,8 @@ class JobService:
                             "args": task.args
                         })
 
-                    job.status = "g"
-                    self.db.commit()
-                    
                     image_name = process["process_id"].replace("_", "-").lower() # TODO: image name in process spec
 
-                    job.status = "h"
-                    self.db.commit()
                     status, log, obj_image_stream = self.template_controller.build(
                         self.api_connector, 
                         template_id, 
