@@ -18,7 +18,7 @@ labels:
   provider: openeo
   project: openeo
   app: openeo-gateway
-  version: 0.0.1
+  version: 0.0.2
 message: "The openEO template will be instantiated." 
 
 parameters:
@@ -46,6 +46,10 @@ parameters:
 - name: CONTACT_EMAIL
   displayName: Email of Organization
   value:
+- name: GATEWAY_URL
+  displayName: GATEWAY URL (Internal OpenShift)
+  value: 
+  required: true
 - name: GIT_URI
   displayName: Git URI
   value: https://github.com/Open-EO/openeo-openshift-driver.git
@@ -187,7 +191,7 @@ objects:
     annotations:
       description: openEO API Gateway
   spec:
-    host: "${HOST}"
+    host: "${GATEWAY_URL}"
     to:
       kind: Service
       name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
