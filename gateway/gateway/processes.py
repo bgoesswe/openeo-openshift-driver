@@ -49,7 +49,7 @@ class ProcessApi(Resource):
             "503": ServiceUnavailable().__parse__()
         }
     })
-    def post(self, user_id):
+    def post(self, user_id=None):
         try:
             args = self.__req_parser.parse_args()
             rpc_response = rpc.processes.create_process(user_id, args)
@@ -81,7 +81,7 @@ class ProcessApi(Resource):
             "503": ServiceUnavailable().__parse__()
         }
     })
-    def get(self, user_id):
+    def get(self, user_id=None):
         try:
             args = self.__req_q_parser.parse_args()
             rpc_response = rpc.processes.get_all_processes(args["qname"])
@@ -127,7 +127,7 @@ class ProcessDetailApi(Resource):
             "503": ServiceUnavailable().__parse__()
         }
     })
-    def get(self, user_id, process_id):
+    def get(self, process_id, user_id=None):
         try:
             rpc_response = rpc.processes.get_process(process_id)
 

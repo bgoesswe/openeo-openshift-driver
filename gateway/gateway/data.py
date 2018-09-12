@@ -45,7 +45,7 @@ class RecordsApi(Resource):
             "503": ServiceUnavailable().__parse__()
         }
     })
-    def get(self, user_id):
+    def get(self, user_id=None):
         try:
             args = self.__req_parser.parse_args()
             rpc_response = rpc.data.get_records(
@@ -96,7 +96,7 @@ class ProductDetailApi(Resource):
             "503": ServiceUnavailable().__parse__()
         }
     })
-    def get(self, user_id, product_id):
+    def get(self, product_id, user_id=None):
         try:
             rpc_response = rpc.data.get_records(
                 qtype="product_details",
