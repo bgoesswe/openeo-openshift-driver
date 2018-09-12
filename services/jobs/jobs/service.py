@@ -77,17 +77,20 @@ class JobService:
     @rpc
     def process_job(self, job_id):
         try:
+            print("a")
             job = self.db.query(Job).filter_by(id=job_id).first()
+            print("b")
             tasks = self.db.query(Task).filter_by(job_id=job_id).all()
+            print("c")
             processes = self.process_service.get_all_processes_full()["data"]
-
+            print("d")
             tasks = sorted(tasks, key=lambda task: task.seq_num)
-
+            print("e")
             job.status = "running"
             self.db.commit()
-
+            print("f")
             data_filter = tasks[0]
-
+            print("g")
             # pvc = self.data_service.prepare_pvc(data_filter)["data"]
 
             # TODO: Implement in Extraction Service
@@ -100,9 +103,9 @@ class JobService:
             top = filter.args["filter_bbox"]["top"]
             bottom = filter.args["filter_bbox"]["bottom"]
             srs = filter.args["filter_bbox"]["srs"]
-
+            print("h")
             bbox = [top, left, bottom, right]
-
+            print("i")
             # in_proj = Proj(init=srs)
             # out_proj = Proj(init='epsg:4326')
             # in_x1, in_y1 = bottom, left
@@ -110,20 +113,22 @@ class JobService:
             # out_x1, out_y1 = transform(in_proj, out_proj, in_x1, in_y1)
             # out_x2, out_y2 = transform(in_proj, out_proj, in_x2, in_y2)
             # bbox = [out_x1, out_y1, out_x2, out_y2]
-
+            print("j")
             file_paths = self.data_service.get_records(qtype="file_paths", qname=product, qgeom=bbox, qstartdate=start, qenddate=end)["data"]
             tasks[0].args["file_paths"] = file_paths
-
+            print("k")
             pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + str(job.id), "storage-write", "5Gi")     # TODO: Calculate storage size and get storage class
             previous_folder = None
+            print("l")
             for idx, task in enumerate(tasks):
                 try:
+                    print("m")
                     template_id = "{0}-{1}".format(job.id, task.id)
-
+                    print("n")
                     for p in processes:
                         if p["process_id"] == task.process_id:
                             process = p
-                    
+                    print("o")
                     config_map = self.template_controller.create_config(
                         self.api_connector, 
                         template_id, 
@@ -132,9 +137,10 @@ class JobService:
                             "last": previous_folder,
                             "args": task.args
                         })
+                    print("p")
                     
                     image_name = process["process_id"].replace("_", "-").lower() # TODO: image name in process spec
-
+                    print("q")
                     status, log, obj_image_stream = self.template_controller.build(
                         self.api_connector, 
                         template_id, 
@@ -143,7 +149,7 @@ class JobService:
                         process["git_uri"], 
                         process["git_ref"], 
                         process["git_dir"])
-
+                    print("r")
                     status, log, metrics =  self.template_controller.deploy(
                         self.api_connector, 
                         template_id,
@@ -154,7 +160,7 @@ class JobService:
                         "1", 
                         "256Mi", 
                         "1Gi")
-                    
+                    print("s")
                     previous_folder = template_id
                 except APIConnectionError as exp:
                     task.status = exp.__str__()
