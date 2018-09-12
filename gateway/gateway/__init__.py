@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_nameko import FlaskPooledClusterRpcProxy
 from flask_restful_swagger_2 import Api, swagger
 
+
 rpc = FlaskPooledClusterRpcProxy()
 
 

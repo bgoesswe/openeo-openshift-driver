@@ -46,10 +46,6 @@ parameters:
 - name: CONTACT_EMAIL
   displayName: Email of Organization
   value:
-- name: GATEWAY_URL
-  displayName: GATEWAY URL (Internal OpenShift)
-  value:
-  required: true
 - name: GIT_URI
   displayName: Git URI
   value: https://github.com/Open-EO/openeo-openshift-driver.git
@@ -150,6 +146,12 @@ objects:
           env:
           - name: GATEWAY_SETTINGS
             value: "${GATEWAY_SETTINGS}"
+          - name: CONTACT_NAME
+            value: "${CONTACT_NAME}"
+          - name: CONTACT_URL
+            value: "${CONTACT_URL}"
+          - name: CONTACT_EMAIL
+            value: "${CONTACT_EMAIL}"
           - name: RABBIT_HOST
             value: "${SERVICE_PREFIX}-rabbitmq"
           - name: RABBIT_USER
@@ -185,7 +187,7 @@ objects:
     annotations:
       description: openEO API Gateway
   spec:
-    host: "${GATEWAY_URL}"
+    host: "${HOST}"
     to:
       kind: Service
       name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
