@@ -11,7 +11,7 @@ rpc = FlaskPooledClusterRpcProxy()
 def create_gateway():
 
     gateway = Flask(__name__)
-    CORS(gateway, resources={r"/api/*": {"origins": "*"}})
+    CORS(gateway, resources={r"/spec/*": {"origins": "*"}})
 
     gateway.config.from_object(environ.get('GATEWAY_SETTINGS'))
     gateway.config.update(
