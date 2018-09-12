@@ -3,11 +3,11 @@ DB_URIS:
 
 AMQP_URI: !env_var "pyamqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}"
 
-# LOGGING:
-#     version: 1
-#     handlers:
-#         console:
-#             class: logging.StreamHandler
-#     root:
-#         level: DEBUG
-#         handlers: [console] 
+LOGGING:
+    version: 1
+    handlers:
+        console:
+            class: logging.StreamHandler
+    root:
+        level: DEBUG
+        handlers: [console] 

@@ -33,14 +33,17 @@ class BaseTemplate(ABC):
     def create(self, api_connector, watch=True):
         ''' Create the template object '''
         try:
+            print("1")
             response = api_connector.request("openshift", "post", self.selfLinks["base"], self.get_json())
             self.extract_selfLinks(response, api_connector)
-
+            
+            print(str(response))
             if watch:
                 self.is_ready(api_connector)
-            
+            print("2")
             return self
         except APIConnectionError as exp:
+            print(str(exp))
             if not exp.code == 409:
                 raise
             self.delete(api_connector)

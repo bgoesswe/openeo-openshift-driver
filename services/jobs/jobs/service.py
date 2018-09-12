@@ -87,6 +87,7 @@ class JobService:
             self.db.commit()
 
             data_filter = tasks[0]
+
             # pvc = self.data_service.prepare_pvc(data_filter)["data"]
 
             # TODO: Implement in Extraction Service
@@ -102,8 +103,6 @@ class JobService:
 
             bbox = [top, left, bottom, right]
 
-            
-
             # in_proj = Proj(init=srs)
             # out_proj = Proj(init='epsg:4326')
             # in_x1, in_y1 = bottom, left
@@ -112,32 +111,21 @@ class JobService:
             # out_x2, out_y2 = transform(in_proj, out_proj, in_x2, in_y2)
             # bbox = [out_x1, out_y1, out_x2, out_y2]
 
+            print("0")
+
             file_paths = self.data_service.get_records(qtype="file_paths", qname=product, qgeom=bbox, qstartdate=start, qenddate=end)["data"]
             tasks[0].args["file_paths"] = file_paths
 
-            job.status = "0 {0}, {1}".format(job.id, job_id)
-            self.db.commit()
-
-            pvc = self.template_controller.create_pvc(self.api_connector, "pvc-{0}".format(job.id), "storage-write", "5Gi")     # TODO: Calculate storage size and get storage class
-            
-            job.status = "1 {0}, {1}".format(job.id, job_id)
-            self.db.commit()
-            
+            pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + str(job.id), "storage-write", "5Gi")     # TODO: Calculate storage size and get storage class
             previous_folder = None
             for idx, task in enumerate(tasks):
                 try:
-                    job.status = "2 {0}, {1}".format(job.id, job_id)
-                    self.db.commit()
-                    
                     template_id = "{0}-{1}".format(job.id, task.id)
-
-                    job.status = "3 {0}, {1}".format(job.id, job_id)
-                    self.db.commit()
 
                     for p in processes:
                         if p["process_id"] == task.process_id:
                             process = p
-
+                    
                     config_map = self.template_controller.create_config(
                         self.api_connector, 
                         template_id, 
@@ -147,9 +135,6 @@ class JobService:
                             "args": task.args
                         })
                     
-                    job.status = "4 {0}, {1}".format(job.id, job_id)
-                    self.db.commit()
-
                     image_name = process["process_id"].replace("_", "-").lower() # TODO: image name in process spec
 
                     status, log, obj_image_stream = self.template_controller.build(
@@ -175,10 +160,10 @@ class JobService:
                     previous_folder = template_id
                 except APIConnectionError as exp:
                     task.status = exp.__str__()
-                    # self.db.commit()
+                    self.db.commit()
             pvc.delete(self.api_connector)
             job.status = "finished"
             self.db.commit()
         except Exception as exp:
             job.status = str(exp)
-            # self.db.commit()
+            self.db.commit()
