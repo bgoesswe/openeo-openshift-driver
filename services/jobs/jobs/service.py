@@ -115,14 +115,24 @@ class JobService:
             file_paths = self.data_service.get_records(qtype="file_paths", qname=product, qgeom=bbox, qstartdate=start, qenddate=end)["data"]
             tasks[0].args["file_paths"] = file_paths
 
-            job.status = "{0}, {1}".format(str(job.id), job_id)
+            job.status = "0 {0}, {1}".format(str(job.id), job_id)
             self.db.commit()
 
             pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + str(job.id), "storage-write", "5Gi")     # TODO: Calculate storage size and get storage class
+            
+            job.status = "1 {0}, {1}".format(str(job.id), job_id)
+            self.db.commit()
+            
             previous_folder = None
             for idx, task in enumerate(tasks):
                 try:
+                    job.status = "2 {0}, {1}".format(str(job.id), job_id)
+                    self.db.commit()
+                    
                     template_id = "{0}-{1}".format(job.id, task.id)
+
+                    job.status = "3 {0}, {1}".format(str(job.id), job_id)
+                    self.db.commit()
 
                     for p in processes:
                         if p["process_id"] == task.process_id:
@@ -136,6 +146,9 @@ class JobService:
                             "last": previous_folder,
                             "args": task.args
                         })
+                    
+                    job.status = "4 {0}, {1}".format(str(job.id), job_id)
+                    self.db.commit()
 
                     image_name = process["process_id"].replace("_", "-").lower() # TODO: image name in process spec
 
