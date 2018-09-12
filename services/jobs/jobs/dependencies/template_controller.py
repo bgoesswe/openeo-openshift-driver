@@ -35,14 +35,14 @@ class TemplateControllerWrapper:
         log = ""
 
         obj_job = Job(template_id, obj_image_stream, obj_config_map, obj_pvc, cpu_request, cpu_limit, mem_request, mem_limit)
-        
+
         log += "Deploying..."
         obj_job.create(api_connector)
 
-        log += obj_job.get_logs(api_connector)
+        # log += obj_job.get_logs(api_connector) # NOt needed for v0.0.2
         # metrics = obj_job.get_metrics(api_connector) # TODO: Metrics Error Bug Fixing -> Process to fast executed for metrics
 
-        # obj_job.delete(api_connector) # TODO: Deactivated just for showcasing
+        obj_job.delete(api_connector) # TODO: Deactivated just for showcasing
         
         return "Finished Deploying", log, []
 
