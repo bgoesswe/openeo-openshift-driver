@@ -111,8 +111,6 @@ class JobService:
             # out_x2, out_y2 = transform(in_proj, out_proj, in_x2, in_y2)
             # bbox = [out_x1, out_y1, out_x2, out_y2]
 
-            print("0")
-
             file_paths = self.data_service.get_records(qtype="file_paths", qname=product, qgeom=bbox, qstartdate=start, qenddate=end)["data"]
             tasks[0].args["file_paths"] = file_paths
 
