@@ -1,6 +1,6 @@
 FROM continuumio/miniconda3:latest
 
-RUN conda create -n condaenv -c conda-forge python=3.6 gdal 
+RUN conda create -n condaenv -c conda-forge python=3.6 gdal=2.2.4 
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app

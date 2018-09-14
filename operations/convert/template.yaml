@@ -1,0 +1,77 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: openeo-convert
+  annotations:
+    openshift.io/display-name: openeo-convert
+    description: >-
+      The templates instantiates the gateway for openEO on OpenShift Origin.
+    openshift.io/long-description: >-
+      Multiple services are setup to provide the OpenEO capabilities. For setting up a
+      OpenShift cluster and configure persitant storage please read the OpenShift documentation.
+      Fur further information on OpenEO please have a look at http://openeo.org
+    tags: openeo, openshift, python, flask
+    iconClass: icon-python
+labels:
+  application: openeo-convert
+  provider: openeo
+  project: openeo
+  app: openeo-convert
+  version: 0.0.1
+message: "The openEO template will be instantiated." 
+
+parameters:
+- name: SERVICE_PREFIX
+  displayName: Service Prefix
+  value: openeo
+  required: true
+- name: SERVICE_NAME
+  displayName: Service Name
+  value: convert
+  required: true
+- name: GIT_URI
+  displayName: Git URI
+  value: https://github.com/Open-EO/openeo-openshift-driver.git
+  required: true
+- name: GIT_REF
+  displayName: Git Directory
+  value: release-0.0.2
+  required: true
+- name: GIT_DIR
+  displayName: Git Directory
+  value: operations/convert
+  required: true
+
+objects:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
+  spec:
+    dockerImageRepository:
+    tags:
+    - name: latest
+
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
+  spec:
+    source:
+      type: Git
+      git:
+        uri: "${GIT_URI}"
+        ref: "${GIT_REF}"
+      contextDir: "${GIT_DIR}"
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "${SERVICE_PREFIX}-${SERVICE_NAME}:latest"
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChange:
