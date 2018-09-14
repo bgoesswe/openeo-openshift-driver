@@ -207,7 +207,7 @@ class DownloadFileApi(Resource):
     @cors.crossdomain(
         origin=["*"],
         methods=["GET"],
-        headers=["Authorization", "Content-Type"],
+        headers=["Authorization", "Content-Type", "Range"],
         credentials=True)
     def options(self):
         return self.__res_parser.code(200)
@@ -215,7 +215,7 @@ class DownloadFileApi(Resource):
     @cors.crossdomain(
         origin=["*"],
         methods=["GET"],
-        headers=["Authorization", "Content-Type"],
+        headers=["Authorization", "Content-Type", "Range"],
         credentials=True)
     # @auth() # Temporary!
     def get(self, job_id, file_name):
