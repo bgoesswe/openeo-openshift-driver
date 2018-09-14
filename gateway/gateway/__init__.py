@@ -74,7 +74,6 @@ def generate_api(gateway):
     from .processes import ProcessApi, ProcessDetailApi
     from .jobs import JobsApi, JobDetailApi,BatchJobApi, DownloadApi, DownloadFileApi
 
-    api.add_resource(Index, "/")
     api.add_resource(Index, "/capabilities")
     api.add_resource(OutputFormats, "/capabilities/output_formats")
     api.add_resource(HealthApi, "/health")
