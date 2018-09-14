@@ -37,9 +37,7 @@ class Index(Resource):
         capabilities = [
             "/",
             "/capabilities",
-            "/capabilities/output_formats"
-            # "/health",
-            # "/health/services",
+            "/capabilities/output_formats",
             "/auth/register",
             "/auth/login",
             "/data",
