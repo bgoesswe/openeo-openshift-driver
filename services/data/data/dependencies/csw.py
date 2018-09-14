@@ -127,10 +127,8 @@ class CSWHandler:
         #         "source": item["dc:creator"]
         #     })
 
-        out_products = [product.pop("aliases") for product in products]
-
         # TODO: Just temporary because csw request is currently very slow
-        return out_products #results
+        return products #results
     
     def get_product_details(self, product, bbox, start, end):
         record = self.get_records(product, bbox, start, end, series=True)[0]
