@@ -4,6 +4,7 @@ from json import loads, dumps
 from datetime import datetime, timedelta
 from xml.dom.minidom import parseString
 from nameko.extensions import DependencyProvider
+from copy import deepcopy
 
 from .bands import BandsExtractor
 from .xml_templates import xml_base, xml_and, xml_series, xml_product, xml_begin, xml_end, xml_bbox
@@ -127,8 +128,12 @@ class CSWHandler:
         #         "source": item["dc:creator"]
         #     })
 
+        products_copy = deepcopy(products)
+        for product in products_copy:
+            product.pop("aliases")
+
         # TODO: Just temporary because csw request is currently very slow
-        return products #results
+        return products_copy #results
     
     def get_product_details(self, product, bbox, start, end):
         record = self.get_records(product, bbox, start, end, series=True)[0]
