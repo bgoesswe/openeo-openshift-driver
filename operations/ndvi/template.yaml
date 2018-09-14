@@ -2,9 +2,9 @@
 kind: Template
 apiVersion: v1
 metadata:
-  name: openeo-ndvi
+  name: ndvi
   annotations:
-    openshift.io/display-name: openeo-ndvi
+    openshift.io/display-name: ndvi
     description: >-
       The templates instantiates the gateway for openEO on OpenShift Origin.
     openshift.io/long-description: >-
@@ -14,20 +14,16 @@ metadata:
     tags: openeo, openshift, python, flask
     iconClass: icon-python
 labels:
-  application: openeo-ndvi
+  application: ndvi
   provider: openeo
   project: openeo
-  app: openeo-ndvi
+  app: ndvi
   version: 0.0.1
 message: "The openEO template will be instantiated." 
 
 parameters:
-- name: SERVICE_PREFIX
-  displayName: Service Prefix
-  value: openeo
-  required: true
-- name: SERVICE_NAME
-  displayName: Service Name
+- name: IMAGE_NAME
+  displayName: Image Name
   value: ndvi
   required: true
 - name: GIT_URI
@@ -47,7 +43,7 @@ objects:
 - kind: ImageStream
   apiVersion: v1
   metadata:
-    name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
+    name: "${IMAGE_NAME}"
   spec:
     dockerImageRepository:
     tags:
@@ -56,7 +52,7 @@ objects:
 - kind: BuildConfig
   apiVersion: v1
   metadata:
-    name: "${SERVICE_PREFIX}-${SERVICE_NAME}"
+    name: "${IMAGE_NAME}"
   spec:
     source:
       type: Git
@@ -70,7 +66,7 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: "${SERVICE_PREFIX}-${SERVICE_NAME}:latest"
+        name: "${IMAGE_NAME}:latest"
     triggers:
     - type: ConfigChange
     - type: ImageChange
