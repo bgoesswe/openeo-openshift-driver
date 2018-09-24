@@ -34,8 +34,34 @@ class Index(Resource):
         }
     })
     def get(self):
+        return redirect("/capabilities")
+
+
+class Capabilities(Resource):
+    __res_parser = ResponseParser()
+
+    @cors.crossdomain(
+        origin=["*"], 
+        methods=["GET"],
+        headers=["Content-Type"])
+    @swagger.doc(CORS().__parse__())
+    def options(self):
+        return self.__res_parser.code(200)
+
+    @cors.crossdomain(
+        origin=["*"], 
+        methods=["GET"],
+        headers=["Content-Type"])
+    @swagger.doc({
+        "tags": ["Capabilities"],
+        "description": "Returns the capabilities, i.e., which OpenEO API features are supported by the back-end.",
+        "responses": {
+            "200": OK("An array of implemented API endpoints.").__parse__(),
+            "503": ServiceUnavailable().__parse__()
+        }
+    })
+    def get(self):
         capabilities = [
-            "/",
             "/capabilities",
             "/capabilities/output_formats",
             "/auth/register",

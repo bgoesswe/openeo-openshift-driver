@@ -67,7 +67,7 @@ def generate_api(gateway):
         }
     )
 
-    from .index import Index, OutputFormats
+    from .index import Index, Capabilities, OutputFormats
     from .health import HealthApi
     from .auth import RegisterApi, LoginApi
     from .data import RecordsApi, ProductDetailApi
@@ -75,6 +75,7 @@ def generate_api(gateway):
     from .jobs import JobsApi, JobDetailApi,BatchJobApi, DownloadApi, DownloadFileApi
 
     api.add_resource(Index, "/capabilities")
+    api.add_resource(Capabilities, "/capabilities")
     api.add_resource(OutputFormats, "/capabilities/output_formats")
     api.add_resource(HealthApi, "/health")
     api.add_resource(RegisterApi, "/auth/register")
