@@ -1,6 +1,6 @@
 """ Query Handler """
 
-from .models import Query
+#from .models import Query
 from hashlib import sha256
 
 #TODO: Move to own file...
@@ -28,7 +28,7 @@ EXAMPLE_GRAPH = {
 
 EXAMPLE_FILE_LIST = ["TESTFILE1", "TESTFILE2", "TESTFILE3", "TESTFILE4"]
 
-
+FILTER_ARGS = EXAMPLE_GRAPH
 
 def handle_query(process_graph, result_files, filter_args, job_id):
 
@@ -52,4 +52,4 @@ def handle_query(process_graph, result_files, filter_args, job_id):
 
     #print(result)
 
-# handle_query(EXAMPLE_GRAPH, EXAMPLE_FILE_LIST)
+handle_query(EXAMPLE_GRAPH, EXAMPLE_FILE_LIST, FILTER_ARGS, "test")
