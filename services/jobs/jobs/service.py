@@ -143,26 +143,27 @@ class JobService:
     
     @rpc
     def process(self, user_id: str, job_id: str):
+        message = "Test0"
         try:
             job = self.db.query(Job).filter_by(id=job_id).first()
-
+            message = "Test1"
             valid, response = self.authorize(user_id, job_id, job)
             if not valid: 
                 raise Exception(response)
 
             job.status = "running"
             self.db.commit()
-            
+            message = "Test2"
             # Get process nodes
             response = self.process_graphs_service.get_nodes(
                 user_id=user_id, 
                 process_graph_id= job.process_graph_id)
-            
+            message = "Test3"
             if response["status"] == "error":
                raise Exception(response)
             
             process_nodes = response["data"]
-
+            message = "Test4"
             # Get file_paths
             filter_args = process_nodes[0]["args"]
             response = self.data_service.get_records(
@@ -171,7 +172,7 @@ class JobService:
                 data_id=filter_args["name"],
                 spatial_extent=filter_args["extent"],
                 temporal_extent=filter_args["time"])
-            
+            message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
             
@@ -203,7 +204,7 @@ class JobService:
             self.db.commit()
             return
         except Exception as exp:
-            job.status = "error: " + exp.__str__()
+            job.status = "error: " + exp.__str__()+ " "+message
             self.db.commit()
             return
 
