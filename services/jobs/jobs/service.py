@@ -144,70 +144,70 @@ class JobService:
     @rpc
     def process(self, user_id: str, job_id: str):
         message = "Test0"
-        #try:
-        job = self.db.query(Job).filter_by(id=job_id).first()
-        message = "Test1"
-        valid, response = self.authorize(user_id, job_id, job)
-        if not valid:
-            raise Exception(response)
+        try:
+            job = self.db.query(Job).filter_by(id=job_id).first()
+            message = "Test1"
+            valid, response = self.authorize(user_id, job_id, job)
+            if not valid:
+                raise Exception(response)
 
-        job.status = "running"
-        self.db.commit()
-        message = "Test2"
-        # Get process nodes
-        response = self.process_graphs_service.get_nodes(
-            user_id=user_id,
-            process_graph_id= job.process_graph_id)
-        message = "Test3"
-        if response["status"] == "error":
-            raise Exception(response)
+            job.status = "running"
+            self.db.commit()
+            message = "Test2"
+            # Get process nodes
+            response = self.process_graphs_service.get_nodes(
+                user_id=user_id,
+                process_graph_id= job.process_graph_id)
+            message = "Test3"
+            if response["status"] == "error":
+               raise Exception(response)
             
-        process_nodes = response["data"]
-        message = "Test4"
-        # Get file_paths
-        filter_args = process_nodes[0]["args"]
-        #message = process_nodes[0]
-        response = self.data_service.get_records(
+            process_nodes = response["data"]
+            message = "Test4"
+            # Get file_paths
+            filter_args = process_nodes[0]["args"]
+            message = process_nodes[0]
+            response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
                 data_id=filter_args["name"],
                 spatial_extent=filter_args["extent"],
                 temporal_extent=filter_args["time"])
-        message = "Test5"
-        if response["status"] == "error":
-            raise Exception(response)
+            message = "Test5"
+            if response["status"] == "error":
+               raise Exception(response)
             
-        filter_args["file_paths"] = response["data"]
+            filter_args["file_paths"] = response["data"]
 
-        # TODO: Calculate storage size and get storage class
-        # TODO: Implement Ressource Management
-        storage_class = "storage-write"
-        storage_size = "5Gi"
-        processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
-        min_cpu = "500m"
-        max_cpu = "1"
-        min_ram = "256Mi"
-        max_ram = "1Gi"
+            # TODO: Calculate storage size and get storage class
+            # TODO: Implement Ressource Management
+            storage_class = "storage-write"
+            storage_size = "5Gi"
+            processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
+            min_cpu = "500m"
+            max_cpu = "1"
+            min_ram = "256Mi"
+            max_ram = "1Gi"
 
             # Create OpenShift objects
-        pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
-        config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
+            pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
+            config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
             
             # Deploy container
-        logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
+            logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
                 config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
 
-        pvc.delete(self.api_connector)
+            pvc.delete(self.api_connector)
             
-        job.logs = logs
-        job.metrics = metrics
-        job.status = "finished"
-        self.db.commit()
-        return
-        #except Exception as exp:
-        #    job.status = "error: " + exp.__str__()+ " "+message
-        #    self.db.commit()
-        #    return
+            job.logs = logs
+            job.metrics = metrics
+            job.status = "finished"
+            self.db.commit()
+            return
+        except Exception as exp:
+            job.status = "error: " + exp.__str__()+ " "+str(message)
+            self.db.commit()
+            return
 
     # TODO: If build should be automated using an endpoint e.g. /build the following can be 
     # activated and adapted
