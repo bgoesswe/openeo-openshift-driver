@@ -5,10 +5,14 @@ class NodesWrapper:
     def __init__(self):
         self.nodes = []
         self.filters = {
-            "data_id": None,
-            "time": None,
+            "data_id": "s2a_prd_msil1c",
+            "time": ["2017-01-01", "2017-01-31"],
             "bands": None,
-            "extent": None,
+            "extent": {"crs": "EPSG:32632",
+     "east": 672000,
+     "north": 5161000,
+     "south": 5181000,
+     "west": 650000},
             "derived_from": None,
             "license": None
         }
