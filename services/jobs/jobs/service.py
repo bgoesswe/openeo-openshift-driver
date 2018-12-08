@@ -176,7 +176,7 @@ class JobService:
             message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
-            
+            message = "Test6"
             filter_args["file_paths"] = response["data"]
 
             # TODO: Calculate storage size and get storage class
@@ -188,15 +188,15 @@ class JobService:
             max_cpu = "1"
             min_ram = "256Mi"
             max_ram = "1Gi"
-
+            message = "Test7"
             # Create OpenShift objects
             pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
             config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
-            
+            message = "Test8"
             # Deploy container
             logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
                 config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
-
+            message = "Test9"
             pvc.delete(self.api_connector)
             
             job.logs = logs
