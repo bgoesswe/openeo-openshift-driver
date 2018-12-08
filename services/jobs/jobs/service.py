@@ -166,6 +166,7 @@ class JobService:
             message = "Test4"
             # Get file_paths
             filter_args = process_nodes[0]["args"]
+            message = filter_args
             response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
