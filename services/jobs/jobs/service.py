@@ -191,8 +191,8 @@ class JobService:
 
             query = self.handle_query(filter_args["file_paths"], filter_args)
 
-            job.status = "running "+str(query.normalized)
-            self.db.commit()
+            #job.status = "running "+str(query.normalized)
+            #self.db.commit()
 
             message = str(query)
 
