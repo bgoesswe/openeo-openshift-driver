@@ -193,6 +193,9 @@ class JobService:
 
             message = str(query)
 
+            self.assign_query(query.pid, job_id)
+
+            message = "Really finishd !!"
             # TODO: Calculate storage size and get storage class
             # TODO: Implement Ressource Management
             #storage_class = "storage-write"
@@ -298,9 +301,16 @@ class JobService:
 
         new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
                  result_hash, metadata)
+
+        self.db.add(new_query)
+        self.db.commit()
+
         return new_query
 
-
+    def assign_query(self, query_pid, job_id):
+        queryjob = QueryJob(query_pid, job_id)
+        self.db.add(queryjob)
+        self.db.commit()
 
     # @rpc
     # def get_job(self, user_id, job_id):
