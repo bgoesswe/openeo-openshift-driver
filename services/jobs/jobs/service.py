@@ -6,7 +6,7 @@ from nameko_sqlalchemy import DatabaseSession
 
 from hashlib import sha256
 from uuid import uuid4
-
+import json
 from .models import Base, Job, Query, QueryJob
 from .schema import JobSchema, JobSchemaFull
 # from .exceptions import BadRequest, Forbidden, APIConnectionError
@@ -328,6 +328,40 @@ class JobService:
         queryjob = self.db.query(QueryJob).filter_by(job_id=job_id).first()
 
         return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
+
+    @rpc
+    def get_query_by_pid(self, query_pid):
+        return self.db.query(Query).filter_by(pid=query_pid).first()
+
+    @rpc
+    def reexecute_query(self, user_id, query_pid):
+        query =  self.db.query(Query).filter_by(pid=query_pid).first()
+
+        filter_args = query.normalized
+
+        json_acceptable_string = filter_args.replace("'", "\"")
+        filter_args = json.loads(json_acceptable_string)
+
+        # quick fix
+        spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                          filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
+
+        temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
+
+        response = self.data_service.get_records(
+            detail="file_path",
+            user_id=user_id,
+            name=filter_args["name"],
+            spatial_extent=spatial_extent,
+            temporal_extent=temporal)
+
+        if response["status"] == "error":
+            raise Exception(response)
+
+        filter_args["file_paths"] = response["data"]
+
+        return filter_args["file_paths"]
+
 
     # @rpc
     # def get_job(self, user_id, job_id):
