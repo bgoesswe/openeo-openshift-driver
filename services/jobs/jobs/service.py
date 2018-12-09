@@ -228,8 +228,10 @@ class JobService:
             #job.logs = logs
             #job.metrics = metrics
 
-            query = self.get_input_pid(job_id)
-            message = str(query)
+            result_set = self.reexecute_query(user_id, query.pid)
+
+            message = str(result_set)
+
             job.status = "finished "+message
             self.db.commit()
             return
