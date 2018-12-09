@@ -4,7 +4,10 @@ from os import environ
 from nameko.rpc import rpc, RpcProxy
 from nameko_sqlalchemy import DatabaseSession
 
-from .models import Base, Job
+from hashlib import sha256
+from uuid import uuid4
+
+from .models import Base, Job, Query, QueryJob
 from .schema import JobSchema, JobSchemaFull
 # from .exceptions import BadRequest, Forbidden, APIConnectionError
 # from .dependencies.task_parser import TaskParser
@@ -186,29 +189,33 @@ class JobService:
             message = "Test6"
             filter_args["file_paths"] = response["data"]
 
+            query = self.handle_query(self, filter_args["file_paths"], filter_args)
+
+            message = str(query)
+
             # TODO: Calculate storage size and get storage class
             # TODO: Implement Ressource Management
-            storage_class = "storage-write"
-            storage_size = "5Gi"
-            processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
-            min_cpu = "500m"
-            max_cpu = "1"
-            min_ram = "256Mi"
-            max_ram = "1Gi"
-            message = "Test7"
+            #storage_class = "storage-write"
+            #storage_size = "5Gi"
+            #processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
+            #min_cpu = "500m"
+            #max_cpu = "1"
+            #min_ram = "256Mi"
+            #max_ram = "1Gi"
+            #message = "Test7"
             # Create OpenShift objects
-            pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
-            config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
-            message = "Test8"
+            #pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
+            #config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
+            #message = "Test8"
             # Deploy container
-            logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
-                config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
-            message = "Test9"
-            pvc.delete(self.api_connector)
+            #logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
+            #    config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
+            #message = "Test9"
+            #pvc.delete(self.api_connector)
             
-            job.logs = logs
-            job.metrics = metrics
-            job.status = "finished"
+            #job.logs = logs
+            #job.metrics = metrics
+            job.status = "finished "+message
             self.db.commit()
             return
         except Exception as exp:
@@ -261,6 +268,37 @@ class JobService:
         
         return True, None
 
+    # QUERY STORE functionallity
+
+    def order_dict(self, dictionary):
+        return {k: self.order_dict(v) if isinstance(v, dict) else v
+                for k, v in sorted(dictionary.items())}
+
+    def handle_query(self, result_files, filter_args):
+
+        # normalized query, sorted query...
+        normalized = self.order_dict(filter_args)
+        normalized = str(normalized)
+        normalized = normalized.encode('utf-8')
+        norm_hash = sha256(normalized).hexdigest()
+
+        result_list = str(result_files)
+        result_list = result_list.encode('utf-8')
+
+        result_hash = sha256(result_list).hexdigest()
+
+        existing = self.db.query(Query).filter_by(norm_hash=norm_hash, result_hash=result_hash).first()
+
+        if existing:
+            return existing
+
+        dataset_pid = filter_args["name"]
+        orig_query = filter_args
+        metadata = {"number_of_files": len(result_files)}
+
+        new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
+                 result_hash, metadata)
+        return new_query
 
 
 
