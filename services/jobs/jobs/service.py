@@ -342,6 +342,7 @@ class JobService:
         filter_args = query.original
 
         json_acceptable_string = filter_args.replace("'", "\"")
+        json_acceptable_string = json_acceptable_string.replace("None", "null")
         filter_args = json.loads(json_acceptable_string)
 
         # quick fix
