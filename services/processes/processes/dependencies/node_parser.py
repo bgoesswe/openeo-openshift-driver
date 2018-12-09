@@ -47,7 +47,7 @@ class NodesWrapper:
         if process_spec[0]["p_type"] == "filter":
             self.parse_filter(process_id, node_graph)
         else:
-            self.nodes.append({parse_process_graph
+            self.nodes.append({
                 "process_id": process_id,
                 "args": node_graph
             })
