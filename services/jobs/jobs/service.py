@@ -77,12 +77,12 @@ class JobService:
             
             job.process_graph = response["data"]["process_graph"]
 
-            query = self.get_input_pid(job_id)
+            #query = self.get_input_pid(job_id)
 
             return {
                 "status": "success",
                 "code": 200,
-                "input_data": query.pid,
+                #"input_data": query.pid,
                 "data": JobSchemaFull().dump(job).data
             }
         except Exception as exp:
@@ -224,6 +224,9 @@ class JobService:
             
             #job.logs = logs
             #job.metrics = metrics
+
+            query = self.get_input_pid(job_id)
+            message = str(query)
             job.status = "finished "+message
             self.db.commit()
             return
