@@ -40,7 +40,7 @@ class Job(Base):
 class Query(Base):
     __tablename__ = 'query'
 
-    pid = Column(String, primary_key=True)
+    pid = Column("query_pid", String, primary_key=True)
     dataset_pid = Column(String, nullable=False)
     original = Column(String, nullable=False)
     normalized = Column(String, nullable=False)
