@@ -166,17 +166,17 @@ class JobService:
             message = "Test4"
             # Get file_paths
             filter_args = process_nodes[0]["args"]
-            message = process_nodes[0]
+            message = filter_args
             response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
                 name=filter_args["data_id"],
                 spatial_extent=filter_args["extent"],
                 temporal_extent=filter_args["time"])
-            message = "Test5"
+            #message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
-            message = "Test6"
+            #message = "Test6"
             filter_args["file_paths"] = response["data"]
 
             # TODO: Calculate storage size and get storage class

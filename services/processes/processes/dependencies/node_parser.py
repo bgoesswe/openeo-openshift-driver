@@ -5,14 +5,10 @@ class NodesWrapper:
     def __init__(self):
         self.nodes = []
         self.filters = {
-            "data_id": "s2a_prd_msil1c",
-            "time": ["2017-01-01", "2017-01-31"],
+            "data_id": None,
+            "time": None,
             "bands": None,
-            "extent": {"crs": "EPSG:32632",
-     "east": 672000,
-     "north": 5161000,
-     "south": 5181000,
-     "west": 650000},
+            "extent": None,
             "derived_from": None,
             "license": None
         }
@@ -51,7 +47,7 @@ class NodesWrapper:
         if process_spec[0]["p_type"] == "filter":
             self.parse_filter(process_id, node_graph)
         else:
-            self.nodes.append({
+            self.nodes.append({parse_process_graph
                 "process_id": process_id,
                 "args": node_graph
             })
