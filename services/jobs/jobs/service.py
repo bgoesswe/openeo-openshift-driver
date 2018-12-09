@@ -169,7 +169,8 @@ class JobService:
             message = filter_args
 
             # quick fix
-            spatial_extent = [filter_args["extent"]["north"], filter_args["extent"]["west"], filter_args["extent"]["south"], filter_args["extent"]["east"]]
+            spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                              filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
             temporal = "{}/{}".format(filter_args["time"][0], filter_args["time"][0])
 
@@ -179,10 +180,10 @@ class JobService:
                 name=filter_args["name"],
                 spatial_extent=spatial_extent,
                 temporal_extent=temporal)
-            #message = "Test5"
+            message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
-            #message = "Test6"
+            message = "Test6"
             filter_args["file_paths"] = response["data"]
 
             # TODO: Calculate storage size and get storage class
