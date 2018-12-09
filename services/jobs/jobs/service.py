@@ -189,7 +189,7 @@ class JobService:
             message = "Test6"
             filter_args["file_paths"] = response["data"]
 
-            query = self.handle_query(self, filter_args["file_paths"], filter_args)
+            query = self.handle_query(filter_args["file_paths"], filter_args)
 
             message = str(query)
 
