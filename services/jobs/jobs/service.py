@@ -339,7 +339,7 @@ class JobService:
     def reexecute_query(self, user_id, query_pid):
         query =  self.db.query(Query).filter_by(pid=query_pid).first()
 
-        filter_args = query.normalized
+        filter_args = query.original
 
         json_acceptable_string = filter_args.replace("'", "\"")
         filter_args = json.loads(json_acceptable_string)
