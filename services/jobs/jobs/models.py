@@ -43,10 +43,10 @@ class Query(Base):
     pid = Column(String, primary_key=True)
     dataset_pid = Column(String, nullable=False)
     original = Column(String, nullable=False)
-    normalized = Column(JSON, nullable=False)
+    normalized = Column(String, nullable=False)
     norm_hash = Column(String, nullable=False)
     result_hash = Column(String, nullable=False)
-    meta_data = Column("metadata", JSON, default=dumps({}))
+    meta_data = Column("metadata", String, default="{}")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -64,8 +64,8 @@ class QueryJob(Base):
     __tablename__ = 'queryjob'
 
     id = Column(String, primary_key=True, autoincrement=True)
-    query_pid = Column(String, ForeignKey('query.pid'), nullable=False)
-    job_id = Column(String, ForeignKey('job.id'), nullable=False)
+    query_pid = Column(String, nullable=False)
+    job_id = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
