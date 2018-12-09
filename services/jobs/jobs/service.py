@@ -167,12 +167,18 @@ class JobService:
             # Get file_paths
             filter_args = process_nodes[0]["args"]
             message = filter_args
+
+            # quick fix
+            spatial_extent = [filter_args["extent"]["north"], filter_args["extent"]["west"], filter_args["extent"]["south"], filter_args["extent"]["east"]]
+
+            temporal = "{}/{}".format(filter_args["time"][0], filter_args["time"][0])
+
             response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
-                name=filter_args["data_id"],
-                spatial_extent=filter_args["extent"],
-                temporal_extent=filter_args["time"])
+                name=filter_args["name"],
+                spatial_extent=spatial_extent,
+                temporal_extent=temporal)
             #message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
