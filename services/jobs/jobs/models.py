@@ -63,7 +63,7 @@ class Query(Base):
 class QueryJob(Base):
     __tablename__ = 'queryjob'
 
-    id = Column(String, primary_key=True, autoincrement=True)
+    #id = Column(String, primary_key=True, autoincrement=True)
     query_pid = Column(String, nullable=False)
     job_id = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

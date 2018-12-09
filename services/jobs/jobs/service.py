@@ -191,6 +191,9 @@ class JobService:
 
             query = self.handle_query(filter_args["file_paths"], filter_args)
 
+            job.status = "running "+str(query.normalized)
+            self.db.commit()
+
             message = str(query)
 
             self.assign_query(query.pid, job_id)
@@ -282,9 +285,8 @@ class JobService:
         # normalized query, sorted query...
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
-        normalized = normalized.encode('utf-8')
         print(normalized)
-        norm_hash = sha256(normalized).hexdigest()
+        norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
         print(norm_hash)
         result_list = str(result_files)
         result_list = result_list.encode('utf-8')
