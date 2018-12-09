@@ -79,11 +79,14 @@ class JobService:
 
             query = self.get_input_pid(job_id)
 
+            result = JobSchemaFull().dump(job).data
+
+            result["input_data"] = query.pid
+
             return {
                 "status": "success",
                 "code": 200,
-                "input_data": query.pid,
-                "data": JobSchemaFull().dump(job).data
+                "data": result
             }
         except Exception as exp:
             return ServiceException(500, user_id, str(exp),

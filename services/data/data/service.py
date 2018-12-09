@@ -91,6 +91,9 @@ class DataService:
         Returns:
             dict -- The product or a serialized exception
         """
+        # Query Store addition:
+
+
 
         try:
             name = self.arg_parser.parse_product(name)
