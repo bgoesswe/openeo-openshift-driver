@@ -77,12 +77,12 @@ class JobService:
             
             job.process_graph = response["data"]["process_graph"]
 
-            #query = self.get_input_pid(job_id)
+            query = self.get_input_pid(job_id)
 
             return {
                 "status": "success",
                 "code": 200,
-                #"input_data": query.pid,
+                "input_data": query.pid,
                 "data": JobSchemaFull().dump(job).data
             }
         except Exception as exp:
@@ -324,7 +324,7 @@ class JobService:
     def get_input_pid(self, job_id):
         queryjob = self.db.query(QueryJob).filter_by(job_id=job_id).first()
 
-        return self.db.query(QueryJob).filter_by(pid=queryjob.query_pid).first()
+        return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
 
     # @rpc
     # def get_job(self, user_id, job_id):
