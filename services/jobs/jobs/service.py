@@ -173,7 +173,7 @@ class JobService:
                               filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
             temporal = "{}/{}".format(filter_args["time"][0], filter_args["time"][0])
-
+            message = str(spatial_extent) + "##"+temporal
             response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
