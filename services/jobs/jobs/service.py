@@ -283,8 +283,9 @@ class JobService:
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
         normalized = normalized.encode('utf-8')
+        print(normalized)
         norm_hash = sha256(normalized).hexdigest()
-
+        print(norm_hash)
         result_list = str(result_files)
         result_list = result_list.encode('utf-8')
 
@@ -295,9 +296,9 @@ class JobService:
         if existing:
             return existing
 
-        dataset_pid = filter_args["name"]
-        orig_query = filter_args
-        metadata = {"number_of_files": len(result_files)}
+        dataset_pid = str(filter_args["name"])
+        orig_query = str(filter_args)
+        metadata = str({"number_of_files": len(result_files)})
 
         new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
                  result_hash, metadata)
