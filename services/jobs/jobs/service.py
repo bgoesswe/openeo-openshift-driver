@@ -336,19 +336,18 @@ class JobService:
         return self.db.query(Query).filter_by(pid=query_pid).first()
 
     @rpc
-    def get_querydata_by_pid(self, query_pid):
+    def get_dataset_by_pid(self, query_pid):
         query = self.db.query(Query).filter_by(pid=query_pid).first()
         dataset = query.dataset_pid
-        query = query.normalized
+        return dataset
 
+    @rpc
+    def get_querydata_by_pid(self, query_pid):
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
 
-        result = [query["extent"]["extent"]["north"], query["extent"]["extent"]["west"],
-                          query["extent"]["extent"]["south"], query["extent"]["extent"]["east"]]
+        query = str(query.normalized)
 
-        result.append("{}/{}".format(query["time"]["extent"][0], query["time"]["extent"][1]))
-        result.append(dataset)
-
-        return result
+        return query
 
     @rpc
     def reexecute_query(self, user_id, query_pid):

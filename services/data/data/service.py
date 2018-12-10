@@ -96,14 +96,11 @@ class DataService:
         # Query Store addition:
 
         querydata = self.jobs_service.get_querydata_by_pid(name)
-
-        result_set = None
-
-        temporal = None
+        dataset = self.jobs_service.get_dataset_by_pid(name)
 
         if querydata:
             result_set = self.jobs_service.reexecute_query(user_id, name)
-            name = querydata[5]
+            name = dataset
 
         try:
             name = self.arg_parser.parse_product(name)
@@ -113,11 +110,8 @@ class DataService:
             if result_set:
                 response["input_files"] = result_set
             if querydata:
-                response["spatial_extent"]["bottom"] = querydata[2]
-                response["spatial_extent"]["left"] = querydata[1]
-                response["spatial_extent"]["right"] = querydata[3]
-                response["spatial_extent"]["top"] = querydata[0]
-                response["temporal_extent"] = querydata[4]
+                response["query"] = querydata
+
 
             return {
                 "status": "success",
