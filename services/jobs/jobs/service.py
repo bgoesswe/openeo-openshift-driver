@@ -415,11 +415,13 @@ class JobService:
     def get_provenance(self):
         context_model = {}
 
-        import pip, subprocess
-        installed_packages = pip.get_installed_distributions()
-        installed_packages_list = sorted(["%s==%s" % (i.key, i.version)
-                                          for i in installed_packages])
-        context_model["code_env"] = installed_packages_list
+        installed_packages = self.run_cmd("pip freeze")
+
+
+        #installed_packages = pip.get_installed_distributions()
+        #installed_packages_list = sorted(["%s==%s" % (i.key, i.version)
+         #                                 for i in installed_packages])
+        context_model["code_env"] = installed_packages
 
         context_model["backend_env"] = self.get_git("git")
 
