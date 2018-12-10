@@ -194,13 +194,13 @@ class JobService:
                raise Exception(response)
             message = "Test6"
 
-            query = self.handle_query(filter_args["file_paths"], filter_args)
+            query = self.handle_query(response["data"], filter_args)
 
             filter_args["file_paths"] = response["data"]
             #job.status = "running "+str(query.normalized)
             #self.db.commit()
 
-            message = str(query)
+            #message = str(query)
 
             self.assign_query(query.pid, job_id)
 
