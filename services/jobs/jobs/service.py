@@ -336,9 +336,10 @@ class JobService:
         return self.db.query(Query).filter_by(pid=query_pid).first()
 
     @rpc
-    def get_dataset_by_pid(self, query_pid):
+    def get_querydata_by_pid(self, query_pid):
         query = self.db.query(Query).filter_by(pid=query_pid).first()
-        return query.dataset_pid
+
+        return query.normalized
 
     @rpc
     def reexecute_query(self, user_id, query_pid):
