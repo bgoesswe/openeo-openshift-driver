@@ -386,13 +386,13 @@ class JobService:
 
     def get_git(self, path):
         import hashlib
-        git_cmd = " "
+        git_cmd = "git"
 
         # print(git_cmd)
-        CMD_GIT_URL = "{0} -C {1} config --get remote.origin.url".format(git_cmd, path)
-        CMD_GIT_BRANCH = "{0} -C {1} branch".format(git_cmd, path)
-        CMD_GIT_COMMIT = "{0} -C {1} log".format(git_cmd, path)  # first line
-        CMD_GIT_DIFF = "{0} -C {1} diff".format(git_cmd, path)  # Should do that ?
+        CMD_GIT_URL = "{0} config --get remote.origin.url".format(git_cmd)
+        CMD_GIT_BRANCH = "{0} branch".format(git_cmd)
+        CMD_GIT_COMMIT = "{0} log".format(git_cmd)  # first line
+        CMD_GIT_DIFF = "{0} diff".format(git_cmd)  # Should do that ?
 
         print("Get Git Info")
 
