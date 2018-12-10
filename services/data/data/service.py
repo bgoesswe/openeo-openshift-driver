@@ -103,10 +103,7 @@ class DataService:
 
         if querydata:
             result_set = self.jobs_service.reexecute_query(user_id, name)
-            name = querydata["name"]
-
-            temporal = "{}/{}".format(querydata["time"]["extent"][0], querydata["time"]["extent"][1])
-
+            name = querydata[5]
 
         try:
             name = self.arg_parser.parse_product(name)
@@ -116,11 +113,11 @@ class DataService:
             if result_set:
                 response["input_files"] = result_set
             if querydata:
-                response["spatial_extent"]["bottom"] = querydata["extent"]["extent"]["south"]
-                response["spatial_extent"]["left"] = querydata["extent"]["extent"]["west"]
-                response["spatial_extent"]["right"] = querydata["extent"]["extent"]["east"]
-                response["spatial_extent"]["top"] = querydata["extent"]["extent"]["north"]
-                response["temporal_extent"] = temporal
+                response["spatial_extent"]["bottom"] = querydata[2]
+                response["spatial_extent"]["left"] = querydata[1]
+                response["spatial_extent"]["right"] = querydata[3]
+                response["spatial_extent"]["top"] = querydata[0]
+                response["temporal_extent"] = querydata[4]
 
             return {
                 "status": "success",
