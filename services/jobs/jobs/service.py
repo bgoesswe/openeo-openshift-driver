@@ -193,10 +193,10 @@ class JobService:
             if response["status"] == "error":
                raise Exception(response)
             message = "Test6"
-            filter_args["file_paths"] = response["data"]
 
             query = self.handle_query(filter_args["file_paths"], filter_args)
 
+            filter_args["file_paths"] = response["data"]
             #job.status = "running "+str(query.normalized)
             #self.db.commit()
 
@@ -204,7 +204,7 @@ class JobService:
 
             self.assign_query(query.pid, job_id)
 
-            message = "Really finishd !!"
+            message = self.get_provenance()
             # TODO: Calculate storage size and get storage class
             # TODO: Implement Ressource Management
             #storage_class = "storage-write"
@@ -378,6 +378,52 @@ class JobService:
         filter_args["file_paths"] = response["data"]
 
         return filter_args["file_paths"]
+
+    def run_cmd(self, command):
+        import subprocess
+        result = subprocess.run(command.split(), stdout=subprocess.PIPE)
+        return result.stdout.decode("utf-8")
+
+    def get_git(self, path):
+        import hashlib
+        git_cmd = " "
+
+        # print(git_cmd)
+        CMD_GIT_URL = "{0} -C {1} config --get remote.origin.url".format(git_cmd, path)
+        CMD_GIT_BRANCH = "{0} -C {1} branch".format(git_cmd, path)
+        CMD_GIT_COMMIT = "{0} -C {1} log".format(git_cmd, path)  # first line
+        CMD_GIT_DIFF = "{0} -C {1} diff".format(git_cmd, path)  # Should do that ?
+
+        print("Get Git Info")
+
+        git_url = self.run_cmd(CMD_GIT_URL).split("\n")[0]
+        git_commit = self.run_cmd(CMD_GIT_COMMIT).split("\n")[0].replace("commit", "").strip()
+        git_diff = self.run_cmd(CMD_GIT_DIFF)
+
+        git_diff = hashlib.sha256(git_diff.encode("utf-8"))
+        git_diff = git_diff.hexdigest()
+
+        git_branch = self.run_cmd(CMD_GIT_BRANCH).replace("*", "").strip()
+
+        cm_git = {'url': git_url,
+                  'branch': git_branch,
+                  'commit': git_commit,
+                  'diff': git_diff}
+
+        return cm_git
+
+    def get_provenance(self):
+        context_model = {}
+
+        import pip, subprocess
+        installed_packages = pip.get_installed_distributions()
+        installed_packages_list = sorted(["%s==%s" % (i.key, i.version)
+                                          for i in installed_packages])
+        context_model["code_env"] = installed_packages_list
+
+        context_model["backend_env"] = self.get_git("git")
+
+        return context_model
 
 
     # @rpc
