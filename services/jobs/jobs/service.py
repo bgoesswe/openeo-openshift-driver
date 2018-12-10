@@ -228,9 +228,9 @@ class JobService:
             #job.logs = logs
             #job.metrics = metrics
 
-            result_set = self.reexecute_query(user_id, query.pid)
+            # result_set = self.reexecute_query(user_id, query.pid)
 
-            message = str(result_set)
+            # message = str(result_set)
 
             job.status = "finished "+message
             self.db.commit()
@@ -334,6 +334,11 @@ class JobService:
     @rpc
     def get_query_by_pid(self, query_pid):
         return self.db.query(Query).filter_by(pid=query_pid).first()
+
+    @rpc
+    def get_dataset_by_pid(self, query_pid):
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
+        return query.dataset_pid
 
     @rpc
     def reexecute_query(self, user_id, query_pid):

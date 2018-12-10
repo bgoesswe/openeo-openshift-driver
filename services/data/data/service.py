@@ -95,13 +95,13 @@ class DataService:
         """
         # Query Store addition:
 
-        query = self.jobs_service.get_query_by_pid(name)
+        dataset_pid = self.jobs_service.get_dataset_by_pid(name)
 
         result_set = None
 
-        if query:
-            result_set = self.jobs_service.reexecute_query(user_id, query.pid)
-            name = query.dataset_pid
+        if dataset_pid:
+            result_set = self.jobs_service.reexecute_query(user_id, name)
+            name = dataset_pid
 
 
         try:
