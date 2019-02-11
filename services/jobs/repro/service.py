@@ -52,4 +52,4 @@ def handle_query(process_graph, result_files, filter_args, job_id):
 
     #print(result)
 
-handle_query(EXAMPLE_GRAPH, EXAMPLE_FILE_LIST, FILTER_ARGS, "test")
+#handle_query(EXAMPLE_GRAPH, EXAMPLE_FILE_LIST, FILTER_ARGS, "test")
