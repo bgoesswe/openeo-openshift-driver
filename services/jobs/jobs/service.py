@@ -4,7 +4,10 @@ from os import environ
 from nameko.rpc import rpc, RpcProxy
 from nameko_sqlalchemy import DatabaseSession
 
-from .models import Base, Job
+from hashlib import sha256
+from uuid import uuid4
+import json
+from .models import Base, Job, Query, QueryJob
 from .schema import JobSchema, JobSchemaFull
 # from .exceptions import BadRequest, Forbidden, APIConnectionError
 # from .dependencies.task_parser import TaskParser
@@ -74,10 +77,16 @@ class JobService:
             
             job.process_graph = response["data"]["process_graph"]
 
+            query = self.get_input_pid(job_id)
+
+            result = JobSchemaFull().dump(job).data
+
+            result["input_data"] = query.pid
+
             return {
                 "status": "success",
                 "code": 200,
-                "data": JobSchemaFull().dump(job).data
+                "data": result
             }
         except Exception as exp:
             return ServiceException(500, user_id, str(exp),
@@ -143,67 +152,91 @@ class JobService:
     
     @rpc
     def process(self, user_id: str, job_id: str):
+        message = "Test0"
         try:
             job = self.db.query(Job).filter_by(id=job_id).first()
-
+            message = "Test1"
             valid, response = self.authorize(user_id, job_id, job)
-            if not valid: 
+            if not valid:
                 raise Exception(response)
 
             job.status = "running"
             self.db.commit()
-            
+            message = "Test2"
             # Get process nodes
             response = self.process_graphs_service.get_nodes(
-                user_id=user_id, 
+                user_id=user_id,
                 process_graph_id= job.process_graph_id)
-            
+            message = "Test3"
             if response["status"] == "error":
                raise Exception(response)
             
             process_nodes = response["data"]
-
+            message = "Test4"
             # Get file_paths
             filter_args = process_nodes[0]["args"]
+            message = filter_args
+
+            # quick fix
+            spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                              filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
+
+            temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
+            message = str(spatial_extent) + "##"+temporal
             response = self.data_service.get_records(
                 detail="file_path",
                 user_id=user_id, 
-                data_id=filter_args["name"],
-                spatial_extent=filter_args["extent"],
-                temporal_extent=filter_args["time"])
-            
+                name=filter_args["name"],
+                spatial_extent=spatial_extent,
+                temporal_extent=temporal)
+            message = "Test5"
             if response["status"] == "error":
                raise Exception(response)
-            
-            filter_args["file_paths"] = response["data"]
+            message = "Test6"
 
+            query = self.handle_query(response["data"], filter_args)
+
+            filter_args["file_paths"] = response["data"]
+            #job.status = "running "+str(query.normalized)
+            #self.db.commit()
+
+            #message = str(query)
+
+            self.assign_query(query.pid, job_id)
+
+            message = self.get_provenance()
             # TODO: Calculate storage size and get storage class
             # TODO: Implement Ressource Management
-            storage_class = "storage-write"
-            storage_size = "5Gi"
-            processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
-            min_cpu = "500m"
-            max_cpu = "1"
-            min_ram = "256Mi"
-            max_ram = "1Gi"
-
+            #storage_class = "storage-write"
+            #storage_size = "5Gi"
+            #processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
+            #min_cpu = "500m"
+            #max_cpu = "1"
+            #min_ram = "256Mi"
+            #max_ram = "1Gi"
+            #message = "Test7"
             # Create OpenShift objects
-            pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
-            config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
-            
+            #pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
+            #config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
+            #message = "Test8"
             # Deploy container
-            logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container, 
-                config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
-
-            pvc.delete(self.api_connector)
+            #logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
+            #    config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
+            #message = "Test9"
+            #pvc.delete(self.api_connector)
             
-            job.logs = logs
-            job.metrics = metrics
-            job.status = "finished"
+            #job.logs = logs
+            #job.metrics = metrics
+
+            # result_set = self.reexecute_query(user_id, query.pid)
+
+            # message = str(result_set)
+
+            job.status = "finished "+message
             self.db.commit()
             return
         except Exception as exp:
-            job.status = "error: " + exp.__str__()
+            job.status = "error: " + exp.__str__()+ " "+str(message)
             self.db.commit()
             return
 
@@ -252,7 +285,147 @@ class JobService:
         
         return True, None
 
+    # QUERY STORE functionallity
 
+    def order_dict(self, dictionary):
+        return {k: self.order_dict(v) if isinstance(v, dict) else v
+                for k, v in sorted(dictionary.items())}
+
+    def handle_query(self, result_files, filter_args):
+
+        # normalized query, sorted query...
+        normalized = self.order_dict(filter_args)
+        normalized = str(normalized)
+        print(normalized)
+        norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
+        print(norm_hash)
+        result_list = str(result_files)
+        result_list = result_list.encode('utf-8')
+
+        result_hash = sha256(result_list).hexdigest()
+
+        existing = self.db.query(Query).filter_by(norm_hash=norm_hash, result_hash=result_hash).first()
+
+        if existing:
+            return existing
+
+        dataset_pid = str(filter_args["name"])
+        orig_query = str(filter_args)
+        metadata = str({"number_of_files": len(result_files)})
+
+        new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
+                 result_hash, metadata)
+
+        self.db.add(new_query)
+        self.db.commit()
+
+        return new_query
+
+    def assign_query(self, query_pid, job_id):
+        queryjob = QueryJob(query_pid, job_id)
+        self.db.add(queryjob)
+        self.db.commit()
+
+    def get_input_pid(self, job_id):
+        queryjob = self.db.query(QueryJob).filter_by(job_id=job_id).first()
+
+        return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
+
+    @rpc
+    def get_query_by_pid(self, query_pid):
+        return self.db.query(Query).filter_by(pid=query_pid).first()
+
+    @rpc
+    def get_dataset_by_pid(self, query_pid):
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
+        dataset = query.dataset_pid
+        return dataset
+
+    @rpc
+    def get_querydata_by_pid(self, query_pid):
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
+
+        query = str(query.normalized)
+
+        return query
+
+    @rpc
+    def reexecute_query(self, user_id, query_pid):
+        query =  self.db.query(Query).filter_by(pid=query_pid).first()
+
+        filter_args = query.original
+
+        json_acceptable_string = filter_args.replace("'", "\"")
+        json_acceptable_string = json_acceptable_string.replace("None", "null")
+        filter_args = json.loads(json_acceptable_string)
+
+        # quick fix
+        spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                          filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
+
+        temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
+
+        response = self.data_service.get_records(
+            detail="file_path",
+            user_id=user_id,
+            name=filter_args["name"],
+            spatial_extent=spatial_extent,
+            temporal_extent=temporal)
+
+        if response["status"] == "error":
+            raise Exception(response)
+
+        filter_args["file_paths"] = response["data"]
+
+        return filter_args["file_paths"]
+
+    def run_cmd(self, command):
+        import subprocess
+        result = subprocess.run(command.split(), stdout=subprocess.PIPE)
+        return result.stdout.decode("utf-8")
+
+    def get_git(self, path):
+        import hashlib
+        git_cmd = "git"
+
+        # print(git_cmd)
+        CMD_GIT_URL = "{0} config --get remote.origin.url".format(git_cmd)
+        CMD_GIT_BRANCH = "{0} branch".format(git_cmd)
+        CMD_GIT_COMMIT = "{0} log".format(git_cmd)  # first line
+        CMD_GIT_DIFF = "{0} diff".format(git_cmd)  # Should do that ?
+
+        print("Get Git Info")
+
+        git_url = self.run_cmd(CMD_GIT_URL).split("\n")[0]
+        git_commit = self.run_cmd(CMD_GIT_COMMIT).split("\n")[0].replace("commit", "").strip()
+        git_diff = self.run_cmd(CMD_GIT_DIFF)
+
+        git_diff = hashlib.sha256(git_diff.encode("utf-8"))
+        git_diff = git_diff.hexdigest()
+
+        git_branch = self.run_cmd(CMD_GIT_BRANCH).replace("*", "").strip()
+
+        cm_git = {'url': git_url,
+                  'branch': git_branch,
+                  'commit': git_commit,
+                  'diff': git_diff}
+
+        return cm_git
+
+    def get_provenance(self):
+        context_model = {}
+
+        installed_packages = self.run_cmd("pip freeze")
+
+
+        #installed_packages = pip.get_installed_distributions()
+        #installed_packages_list = sorted(["%s==%s" % (i.key, i.version)
+         #                                 for i in installed_packages])
+        context_model["code_env"] = installed_packages
+
+        context_model["backend_env"] = self.get_git("git")
+
+        return context_model
 
 
     # @rpc

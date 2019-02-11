@@ -16,7 +16,7 @@ class Query(Base):
     normalized = Column(JSON, nullable=False)
     norm_hash = Column(String, nullable=False)
     result_hash = Column(String, nullable=False)
-    metadata = Column(JSON, default=dumps({}))
+    meta_data = Column(JSON, default=dumps({}))
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

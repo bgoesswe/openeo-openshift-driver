@@ -1,7 +1,7 @@
 """ EO Data Discovery """
 # TODO: Adding paging with start= maxRecords= parameter for record requesting 
 
-from nameko.rpc import rpc
+from nameko.rpc import rpc, RpcProxy
 from datetime import datetime
 from typing import Union
 
@@ -55,6 +55,8 @@ class DataService:
     arg_parser = ArgParserProvider()
     csw_session = CSWSession()
 
+    jobs_service = RpcProxy("jobs")
+
     @rpc
     def get_all_products(self, user_id: str=None) -> Union[list, dict]:
         """Requests will ask the back-end for available data and will return an array of 
@@ -91,11 +93,25 @@ class DataService:
         Returns:
             dict -- The product or a serialized exception
         """
+        # Query Store addition:
+
+        querydata = self.jobs_service.get_querydata_by_pid(name)
+        dataset = self.jobs_service.get_dataset_by_pid(name)
+
+        if querydata:
+            result_set = self.jobs_service.reexecute_query(user_id, name)
+            name = dataset
 
         try:
             name = self.arg_parser.parse_product(name)
             product_record = self.csw_session.get_product(name)
             response = ProductRecordSchema().dump(product_record).data
+
+            if result_set:
+                response["input_files"] = result_set
+            if querydata:
+                response["query"] = querydata
+
 
             return {
                 "status": "success",
