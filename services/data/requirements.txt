@@ -10,8 +10,8 @@ greenlet==0.4.14
 idna==2.6
 kombu==3.0.37
 marshmallow==2.15.4
-mkl-fft==1.0.2
-mkl-random==1.0.1
+mkl-fft>=1.0.6
+mkl-random>=1.0.1
 mock==2.0.0
 nameko==2.9.0
 numpy==1.14.3

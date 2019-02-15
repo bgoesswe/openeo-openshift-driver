@@ -163,21 +163,21 @@ class ArgParser:
             str -- The validated and parsed start and end dates
         """
 
-        try:
-            if isinstance(temporal_extent, str):
-                temp_split = temporal_extent.split("/")
-                temporal_extent = {"from": temp_split[0], "to": temp_split[1]}
+        #try:
+        if isinstance(temporal_extent, str):
+            temp_split = temporal_extent.split("/")
+            temporal_extent = {"from": temp_split[0], "to": temp_split[1]}
 
-            start = datetime.strptime(temporal_extent["from"], '%Y-%m-%d')
-            end = datetime.strptime(temporal_extent["to"], '%Y-%m-%d')
+        start = datetime.strptime(temporal_extent["from"], '%Y-%m-%d')
+        end = datetime.strptime(temporal_extent["to"], '%Y-%m-%d')
 
-            if end < start:
-                raise ValidationError("End date is before start date.")
+        if end < start:
+            raise ValidationError("End date is before start date.")
 
-            return temporal_extent["from"] + "T00:00:00Z", temporal_extent["to"] + "T23:59:59Z"
-        except ValueError:
-            raise ValidationError(
-                "Format of start date '{0}' is wrong.".format(start))
+        return temporal_extent["from"] + "T00:00:00Z", temporal_extent["to"] + "T23:59:59Z"
+        #except ValueError:
+        #    raise ValidationError(
+        #        "Format of start date '{0}' is wrong.".format(start))
 
 
 class ArgParserProvider(DependencyProvider):

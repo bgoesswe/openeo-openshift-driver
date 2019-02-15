@@ -46,13 +46,13 @@ class Query(Base):
     normalized = Column(String, nullable=False)
     norm_hash = Column(String, nullable=False)
     result_hash = Column(String, nullable=False)
-    meta_data = Column("metadata", String, default="{}")
+    meta_data = Column("meta_data", String, default="{}")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     def __init__(self, dataset_pid: str, original: dict, normalized: dict, norm_hash: str,
                  result_hash: str, metadata: dict={}):
-        self.pid = "Q-" + str(uuid4())
+        self.pid = "qu-" + str(uuid4())
         self.dataset_pid = dataset_pid
         self.original = original
         self.normalized = normalized

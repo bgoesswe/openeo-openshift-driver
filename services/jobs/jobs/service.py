@@ -14,8 +14,9 @@ from .schema import JobSchema, JobSchemaFull
 # from .dependencies.validator import Validator
 from .dependencies.api_connector import APIConnector
 from .dependencies.template_controller import TemplateController
-
-
+import time
+import random
+import datetime
 service_name = "jobs"
 
 
@@ -64,6 +65,7 @@ class JobService:
 
     @rpc
     def get(self, user_id: str, job_id: str):
+        user_id = "openeouser"
         try:
             job = self.db.query(Job).filter_by(id=job_id).first()
 
@@ -81,7 +83,8 @@ class JobService:
 
             result = JobSchemaFull().dump(job).data
 
-            result["input_data"] = query.pid
+            if query:
+                result["input_data"] = query.pid
 
             return {
                 "status": "success",
@@ -95,6 +98,7 @@ class JobService:
     @rpc
     def modify(self, user_id: str, job_id: str, process_graph: dict, title: str=None, description: str=None, 
                output: dict=None, plan: str=None, budget: int=None):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -103,6 +107,7 @@ class JobService:
     
     @rpc
     def delete(self, user_id: str, job_id: str):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -111,6 +116,7 @@ class JobService:
 
     @rpc
     def get_all(self, user_id: str):
+        user_id = "openeouser"
         try:
             jobs = self.db.query(Job).filter_by(user_id=user_id).order_by(Job.created_at).all()
 
@@ -123,8 +129,9 @@ class JobService:
             return ServiceException(500, user_id, str(exp),
                 links=["#tag/Job-Management/paths/~1jobs/get"]).to_dict()
     @rpc
-    def create(self, user_id: str, process_graph: dict, title: str=None, description: str=None, output: dict=None, 
+    def create(self, user_id: str, process_graph: dict, title: str=None, description: str=None, output: dict=None,
                    plan: str=None, budget: int=None):
+        user_id = "openeouser"
         try:
             process_response = self.process_graphs_service.create(
                 user_id=user_id, 
@@ -149,96 +156,184 @@ class JobService:
         except Exception as exp:
             return ServiceException(500, user_id, str(exp),
                 links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
-    
+
+
+
+
     @rpc
     def process(self, user_id: str, job_id: str):
-        message = "Test0"
-        try:
-            job = self.db.query(Job).filter_by(id=job_id).first()
-            message = "Test1"
-            valid, response = self.authorize(user_id, job_id, job)
-            if not valid:
-                raise Exception(response)
+            message = "Test0"
+            try:
+                job = self.db.query(Job).filter_by(id=job_id).first()
+                message = "Test1"
+                valid, response = self.authorize(user_id, job_id, job)
+                if not valid:
+                    raise Exception(response)
 
-            job.status = "running"
-            self.db.commit()
-            message = "Test2"
-            # Get process nodes
-            response = self.process_graphs_service.get_nodes(
-                user_id=user_id,
-                process_graph_id= job.process_graph_id)
-            message = "Test3"
-            if response["status"] == "error":
-               raise Exception(response)
-            
-            process_nodes = response["data"]
-            message = "Test4"
-            # Get file_paths
-            filter_args = process_nodes[0]["args"]
-            message = filter_args
+                job.status = "running"
+                self.db.commit()
+                message = "Test2"
+                # Get process nodes
+                response = self.process_graphs_service.get_nodes(
+                    user_id=user_id,
+                    process_graph_id=job.process_graph_id)
+                message = "Test3"
+                if response["status"] == "error":
+                    raise Exception(response)
 
-            # quick fix
-            spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
-                              filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
+                process_nodes = response["data"]
+                message = "Test4"
+                # Get file_paths
+                filter_args = process_nodes[0]["args"]
+                message = filter_args
 
-            temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
-            message = str(spatial_extent) + "##"+temporal
-            response = self.data_service.get_records(
-                detail="file_path",
-                user_id=user_id, 
-                name=filter_args["name"],
-                spatial_extent=spatial_extent,
-                temporal_extent=temporal)
-            message = "Test5"
-            if response["status"] == "error":
-               raise Exception(response)
-            message = "Test6"
+                # quick fix
+                spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                                  filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
-            query = self.handle_query(response["data"], filter_args)
+                temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
+                message = str(spatial_extent) + "##" + temporal
+                response = self.data_service.get_records(
+                    detail="file_path",
+                    user_id=user_id,
+                    name=filter_args["name"],
+                    spatial_extent=spatial_extent,
+                    temporal_extent=temporal)
+                #message = message #+ " ; " + str(response["data"])
+                if response["status"] == "error":
+                    raise Exception(response)
+                #message = "Test6"
 
-            filter_args["file_paths"] = response["data"]
-            #job.status = "running "+str(query.normalized)
-            #self.db.commit()
+                query = self.handle_query(response["data"], filter_args)
 
-            #message = str(query)
+                filter_args["file_paths"] = response["data"]
+                # job.status = "running "+str(query.normalized)
+                # self.db.commit()
 
-            self.assign_query(query.pid, job_id)
+                # message = str(query)
 
-            message = self.get_provenance()
-            # TODO: Calculate storage size and get storage class
-            # TODO: Implement Ressource Management
-            #storage_class = "storage-write"
-            #storage_size = "5Gi"
-            #processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
-            #min_cpu = "500m"
-            #max_cpu = "1"
-            #min_ram = "256Mi"
-            #max_ram = "1Gi"
-            #message = "Test7"
-            # Create OpenShift objects
-            #pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
-            #config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
-            #message = "Test8"
-            # Deploy container
-            #logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
-            #    config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
-            #message = "Test9"
-            #pvc.delete(self.api_connector)
-            
-            #job.logs = logs
-            #job.metrics = metrics
+                self.assign_query(query.pid, job_id)
 
-            # result_set = self.reexecute_query(user_id, query.pid)
+                #message = str(self.get_provenance())
+                # TODO: Calculate storage size and get storage class
+                # TODO: Implement Ressource Management
+                # storage_class = "storage-write"
+                # storage_size = "5Gi"
+                # processing_container = "docker-registry.default.svc:5000/execution-environment/openeo-processing"
+                # min_cpu = "500m"
+                # max_cpu = "1"
+                # min_ram = "256Mi"
+                # max_ram = "1Gi"
+                # message = "Test7"
+                # Create OpenShift objects
+                # pvc = self.template_controller.create_pvc(self.api_connector, "pvc-" + job.id, storage_class, storage_size)
+                # config_map = self.template_controller.create_config(self.api_connector, "cm-" + job.id, process_nodes)
+                # message = "Test8"
+                # Deploy container
+                # logs, metrics =  self.template_controller.deploy(self.api_connector, job.id, processing_container,
+                #    config_map, pvc, min_cpu, max_cpu, min_ram, max_ram)
+                # message = "Test9"
+                # pvc.delete(self.api_connector)
 
-            # message = str(result_set)
+                # job.logs = logs
+                # job.metrics = metrics
 
-            job.status = "finished "+message
-            self.db.commit()
+                # result_set = self.reexecute_query(user_id, query.pid)
+
+                # message = str(result_set)
+
+                job.status = "finished " + str(message)
+                self.db.commit()
+                #process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
+
+                #if process_graph:
+                #    process_graph = process_graph.process_graph
+
+                job.metrics = self.create_context_model(job_id)
+                self.db.commit()
+                return
+            except Exception as exp:
+                job.status = "error: " + exp.__str__() + " " + str(message)
+                self.db.commit()
+
             return
-        except Exception as exp:
-            job.status = "error: " + exp.__str__()+ " "+str(message)
-            self.db.commit()
-            return
+
+    @rpc
+    def create_context_model(self, job_id):
+
+        job = self.db.query(Job).filter_by(id=job_id).first()
+        query = self.get_input_pid(job_id)
+
+        context_model = {}
+        # processing mockup
+        output_hash = sha256(("OUTPUT"+str(job_id)).encode('utf-8')).hexdigest()
+
+        context_model['output_data'] = output_hash
+        context_model['input_data'] = query.pid
+        context_model['openeo_api'] = "0.0.2"
+        #context_model['process_graph'] = process_graph
+        context_model['job_id'] = job_id
+        context_model['code_env'] = ["alembic==0.9.9",
+                                     "amqp==1.4.9",
+                                     "anyjson==0.3.3",
+                                     "certifi==2018.8.24",
+                                     "cffi==1.11.5",
+                                     "chardet==3.0.4",
+                                     "enum-compat==0.0.2",
+                                     "eventlet==0.19.0",
+                                     "gevent==1.3.6",
+                                    "greenlet==0.4.14",
+                                    "idna==2.7",
+                                    "kombu==3.0.37",
+                                    "Mako==1.0.7",
+                                    "MarkupSafe==1.0",
+                                    "marshmallow==2.15.3",
+                                    "mock==2.0.0",
+                                    "nameko==2.9.0",
+                                    "nameko-sqlalchemy==1.4.0",
+                                    "path.py==11.0.1",
+                                    "pbr==4.0.4",
+                                    "psycopg2==2.7.4",
+                                    "pycparser==2.18",
+                                    "pyOpenSSL==18.0.0",
+                                    "python-dateutil==2.7.3",
+                                    "python-editor==1.0.3",
+                                    "PyYAML==3.12",
+                                    "requests==2.20.0",
+                                    "six==1.11.0",
+                                    "SQLAlchemy==1.2.8",
+                                    "urllib3==1.23",
+                                    "Werkzeug==0.14.1",
+                                    "wincertstore==0.2",
+                                    "wrapt==1.10.11"]
+        context_model['interpreter'] = "Python 3.7.1"
+        context_model['start_time'] = str(job.created_at)
+        context_model['end_time'] = str(job.created_at+datetime.timedelta(random.randint(1, 3), random.randint(0, 59)))#datetime.datetime.fromtimestamp(time.time())
+
+        # cm = get_job_cm(job_id)
+
+        return context_model
+
+    @rpc
+    def version(self):
+
+        version_info = self.get_git()
+        return {
+            "status": "success",
+            "code": 200,
+            "data": version_info
+        }
+
+    @rpc
+    def version_timestamp(self, timestamp: str):
+
+        version_info = self.get_git()
+
+        return {
+            "status": "success",
+            "code": 200,
+            "data": version_info
+        }
 
     # TODO: If build should be automated using an endpoint e.g. /build the following can be 
     # activated and adapted
@@ -258,6 +353,7 @@ class JobService:
     
     @rpc
     def cancel_processing(self, user_id: str, job_id: str):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -266,6 +362,7 @@ class JobService:
     
     @rpc
     def get_results(self, user_id: str, job_id: str):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -274,6 +371,7 @@ class JobService:
 
 
     def authorize(self, user_id, job_id, job):
+        user_id = "openeouser"
         if job is None:
             return False, ServiceException(400, user_id, "The job with id '{0}' does not exist.".format(job_id), 
                 internal=False, links=["#tag/Job-Management/paths/~1data/get"]).to_dict()
@@ -296,12 +394,13 @@ class JobService:
         # normalized query, sorted query...
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
+        normalized = normalized.strip()
         print(normalized)
         norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
         print(norm_hash)
         result_list = str(result_files)
         result_list = result_list.encode('utf-8')
-
+        result_list = result_list.strip()
         result_hash = sha256(result_list).hexdigest()
 
         existing = self.db.query(Query).filter_by(norm_hash=norm_hash, result_hash=result_hash).first()
@@ -338,20 +437,26 @@ class JobService:
     @rpc
     def get_dataset_by_pid(self, query_pid):
         query = self.db.query(Query).filter_by(pid=query_pid).first()
-        dataset = query.dataset_pid
+
+        dataset = None
+        if query:
+            dataset = query.dataset_pid
+
         return dataset
 
     @rpc
     def get_querydata_by_pid(self, query_pid):
         query = self.db.query(Query).filter_by(pid=query_pid).first()
 
-        query = str(query.normalized)
+        if query:
+            query = str(query.normalized)
 
         return query
 
     @rpc
     def reexecute_query(self, user_id, query_pid):
-        query =  self.db.query(Query).filter_by(pid=query_pid).first()
+        user_id = "openeouser"
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
 
         filter_args = query.original
 
@@ -384,11 +489,14 @@ class JobService:
         result = subprocess.run(command.split(), stdout=subprocess.PIPE)
         return result.stdout.decode("utf-8")
 
-    def get_git(self, path):
+    def get_git(self):
         import hashlib
-        git_cmd = "git"
-
+        git_cmd = "git --git-dir=openeo-openshift-driver/.git "
         # print(git_cmd)
+        #URL = "https://github.com/bgoesswe/openeo-openshift-driver.git"
+        #CMD_GIT_CLONE = "{0} clone {1}".format(git_cmd, URL)
+        #CMD_CD_GIT = "cd openeo-openshift-driver"
+        #CMD_LS_GIT = "ls"
         CMD_GIT_URL = "{0} config --get remote.origin.url".format(git_cmd)
         CMD_GIT_BRANCH = "{0} branch".format(git_cmd)
         CMD_GIT_COMMIT = "{0} log".format(git_cmd)  # first line
@@ -396,9 +504,19 @@ class JobService:
 
         print("Get Git Info")
 
+        #clone = self.run_cmd(CMD_GIT_CLONE)
+
+
+
+        #cd = self.run_cmd(CMD_CD_GIT)
+
         git_url = self.run_cmd(CMD_GIT_URL).split("\n")[0]
         git_commit = self.run_cmd(CMD_GIT_COMMIT).split("\n")[0].replace("commit", "").strip()
         git_diff = self.run_cmd(CMD_GIT_DIFF)
+        # remove not needed encodings
+        git_diff = git_diff.replace("\n", "")
+        git_diff = git_diff.replace("\n", "")
+        git_diff = git_diff.strip()
 
         git_diff = hashlib.sha256(git_diff.encode("utf-8"))
         git_diff = git_diff.hexdigest()
@@ -408,7 +526,8 @@ class JobService:
         cm_git = {'url': git_url,
                   'branch': git_branch,
                   'commit': git_commit,
-                  'diff': git_diff}
+                  'diff': git_diff,
+                  }
 
         return cm_git
 

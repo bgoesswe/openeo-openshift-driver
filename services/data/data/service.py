@@ -68,6 +68,8 @@ class DataService:
         Returns:
              Union[list, dict] -- The products or a serialized exception
         """
+        user_id = "openeouser"
+
 
         try:
             product_records = self.csw_session.get_all_products()
@@ -94,9 +96,11 @@ class DataService:
             dict -- The product or a serialized exception
         """
         # Query Store addition:
-
+        user_id = "openeouser"
         querydata = self.jobs_service.get_querydata_by_pid(name)
         dataset = self.jobs_service.get_dataset_by_pid(name)
+
+        result_set = None
 
         if querydata:
             result_set = self.jobs_service.reexecute_query(user_id, name)
@@ -121,8 +125,8 @@ class DataService:
         except ValidationError as exp:
             return ServiceException(400, user_id, str(exp), internal=False,
                 links=["#tag/EO-Data-Discovery/paths/~1collections~1{name}/get"]).to_dict()
-        except Exception as exp:
-            return ServiceException(500, user_id, str(exp)).to_dict()
+        #except Exception as exp:
+        #    return ServiceException(500, user_id, str(exp)).to_dict()
 
     @rpc
     def get_records(self, user_id: str=None, name: str=None, detail: str="full", 
@@ -141,7 +145,7 @@ class DataService:
              Union[list, dict] -- The records or a serialized exception
         """
         # TODO: Filter by license -> see process get_data
-
+        user_id = "openeouser"
         try:
             name = self.arg_parser.parse_product(name)
 
@@ -171,7 +175,7 @@ class DataService:
             return {
                 "status": "success",
                 "code": 200,
-                "data": response
+                "data": str(response)+": "+str(name)+" "+str(spatial_extent)+" "+str(start)+" "+str(end)
             }
         except ValidationError as exp:
             return ServiceException(400, user_id, str(exp), internal=False,

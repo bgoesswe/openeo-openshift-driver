@@ -96,8 +96,8 @@ class Gateway:
 
         if rpc: func = self._rpc_wrapper(func, is_async)
         if validate: func = self._validate(func)
-        if role: func = self._authorize(func, role)
-        if auth: func = self._authenticate(func)
+        #if role: func = self._authorize(func, role)
+        #if auth: func = self._authenticate(func)
 
         self._service.add_url_rule(
             route,

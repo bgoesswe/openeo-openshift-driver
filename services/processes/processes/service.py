@@ -22,6 +22,7 @@ class ServiceException(Exception):
                  internal: bool=True, links: list=[]):
         self._service = service
         self._code = code
+        user_id = "openeouser"
         self._user_id = user_id
         self._msg = msg
         self._internal = internal
@@ -53,23 +54,29 @@ class ProcessesService:
     db = DatabaseSession(Base)
 
     @rpc
-    def create(self, user_id: str=None, **process_args):
+    def create(self, user_id: str, **process_args):
+        user_id = "openeouser"
         """The request will ask the back-end to create a new process using the description send in the request body.
 
         Keyword Arguments:
             user_id {str} -- The identifier of the user (default: {None})
         """
-
+        myuser_id = "openeouser"
+        message = ""
         try:
+            message = "1"
             parameters = process_args.pop("parameters", {})
-            process = Process(**{"user_id": user_id, **process_args})
-
+            message = "2"
+            process = Process(**{"user_id": myuser_id, **process_args})
+            message = "3"
             for parameter_name, parameter_specs in parameters.items():
                 parameter = Parameter(**{"name":parameter_name, "process_id": process.id, **parameter_specs})
                 self.db.add(parameter)
-
+            message = "4"
             self.db.add(process)
+            message = "5"
             self.db.commit()
+            message = "6"
 
             return {
                 "status": "success",
@@ -77,15 +84,16 @@ class ProcessesService:
                 "data": "The process {0} has been successfully created.".format(process_args["name"])
             }
         except exc.IntegrityError as exp:
-            msg = "Process '{0}' does already exist.".format(
-                process_args["name"])
-            return ServiceException(ProcessesService.name, 400, user_id, msg, internal=False,
+            msg = str(exp) + message #"Process '{0}' does already exist.".format(
+                #process_args["name"])
+            return ServiceException(ProcessesService.name, 400, myuser_id, msg, internal=False,
                                     links=["#tag/EO-Data-Discovery/paths/~1processes/post"]).to_dict()
         except Exception as exp:
-            return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
+            return ServiceException(ProcessesService.name, 500, myuser_id, str(exp)).to_dict()
 
     @rpc
-    def get_all(self, user_id: str=None):
+    def get_all(self, user_id: str="openeouser"):
+        user_id = "openeouser"
         """The request asks the back-end for available processes and returns detailed process descriptions.
         
         Keyword Arguments:
@@ -169,6 +177,7 @@ class ProcessesGraphService:
 
     @rpc
     def get(self, user_id: str, process_graph_id: str):
+        user_id = "openeouser"
         try:
             process_graph = self.db.query(ProcessGraph).filter_by(id=process_graph_id).first()
 
@@ -193,6 +202,7 @@ class ProcessesGraphService:
 
     @rpc
     def delete(self, user_id: str, process_graph_id: str):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -201,6 +211,7 @@ class ProcessesGraphService:
     
     @rpc
     def modify(self, user_id: str, process_graph_id: str, **process_graph_args):
+        user_id = "openeouser"
         try:
             raise Exception("Not implemented yet!")
         except Exception as exp:
@@ -209,6 +220,7 @@ class ProcessesGraphService:
 
     @rpc
     def get_all(self, user_id: str):
+        user_id = "openeouser"
         try:
             process_graphs = self.db.query(ProcessGraph).order_by(ProcessGraph.created_at).all()
 
@@ -228,7 +240,7 @@ class ProcessesGraphService:
         Keyword Arguments:
             user_id {str} -- The identifier of the user (default: {None})
         """
-
+        user_id = "openeouser"
         try:
             process_graph_json = deepcopy(process_graph_args.get("process_graph", {}))
 
@@ -245,6 +257,9 @@ class ProcessesGraphService:
             process_graph = ProcessGraph(**{"user_id": user_id, **process_graph_args})
 
             nodes = self.node_parser.parse_process_graph(process_graph_json, processes)
+
+            message = str(nodes)
+
             imagery_id = None
             for idx, node in enumerate(nodes):
                 process_node = ProcessNode(
@@ -257,6 +272,9 @@ class ProcessesGraphService:
                 imagery_id = process_node.id
 
             process_graph_id = str(process_graph.id)
+
+            process_graph.description = message
+
             self.db.add(process_graph)
             self.db.commit()
 
@@ -277,7 +295,7 @@ class ProcessesGraphService:
             user_id {str} -- The identifier of the user (default: {None})
         """
         # TODO: RESPONSE HEADERS -> OpenEO-Costs
-
+        user_id = "openeouser"
         try:
             # Get all processes
             process_response = self.process_service.get_all()
@@ -305,7 +323,8 @@ class ProcessesGraphService:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
 
     @rpc
-    def get_nodes(self, user_id: str, process_graph_id: str):
+    def get_nodes(self, process_graph_id: str, user_id: str="openeouser"):
+        user_id = "openeouser"
 
         try:
             process_graph = self.db.query(ProcessGraph).filter_by(id=process_graph_id).first()

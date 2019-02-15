@@ -297,7 +297,6 @@ class CSWHandler:
 
         return record_next, records
 
-
 class CSWSession(DependencyProvider):
     """The CSWSession is the DependencyProvider of the CSWHandler.
     """
