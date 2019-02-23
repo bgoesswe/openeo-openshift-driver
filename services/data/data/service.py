@@ -10,6 +10,8 @@ from .dependencies.csw import CSWSession, CWSError
 from .dependencies.arg_parser import ArgParserProvider, ValidationError
 
 
+
+
 service_name = "data"
 
 
@@ -115,6 +117,9 @@ class DataService:
                 response["input_files"] = result_set
             if querydata:
                 response["query"] = querydata
+                response.pop('spatial_extent', None)
+                response.pop('temporal_extent', None)
+
 
 
             return {

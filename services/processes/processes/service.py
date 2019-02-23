@@ -64,22 +64,22 @@ class ProcessesService:
         myuser_id = "openeouser"
         message = ""
         try:
-            message = "1"
+            message = message + "1"
             parameters = process_args.pop("parameters", {})
-            message = "2"
+            message = message + "2"
             process = Process(**{"user_id": myuser_id, **process_args})
-            message = "3"
+            message = message + "3"
             for parameter_name, parameter_specs in parameters.items():
                 parameter = Parameter(**{"name":parameter_name, "process_id": process.id, **parameter_specs})
                 self.db.add(parameter)
-            message = "4"
+            message = message + "4"
             self.db.add(process)
-            message = "5"
+            message = message + "5"
             self.db.commit()
-            message = "6"
+            message = message + "6"
 
             return {
-                "status": "success",
+                "status": "success "+message,
                 "code": 201,
                 "data": "The process {0} has been successfully created.".format(process_args["name"])
             }
@@ -255,10 +255,10 @@ class ProcessesGraphService:
             processes = process_response["data"]
             
             process_graph = ProcessGraph(**{"user_id": user_id, **process_graph_args})
-
+            message = str(processes)
             nodes = self.node_parser.parse_process_graph(process_graph_json, processes)
 
-            message = str(nodes)
+            message = message + " ;; " + str(nodes)
 
             imagery_id = None
             for idx, node in enumerate(nodes):
@@ -323,7 +323,7 @@ class ProcessesGraphService:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
 
     @rpc
-    def get_nodes(self, process_graph_id: str, user_id: str="openeouser"):
+    def get_nodes(self, user_id: str, process_graph_id: str):
         user_id = "openeouser"
 
         try:

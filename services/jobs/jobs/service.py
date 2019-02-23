@@ -162,15 +162,16 @@ class JobService:
 
     @rpc
     def process(self, user_id: str, job_id: str):
+            user_id = "openeouser"
             message = "Test0"
             try:
                 job = self.db.query(Job).filter_by(id=job_id).first()
-                message = "Test1"
+                message = "Test1"+str(job_id)
                 valid, response = self.authorize(user_id, job_id, job)
                 if not valid:
                     raise Exception(response)
 
-                job.status = "running"
+                job.status = "running "+str(job.process_graph_id)
                 self.db.commit()
                 message = "Test2"
                 # Get process nodes
@@ -182,13 +183,14 @@ class JobService:
                     raise Exception(response)
 
                 process_nodes = response["data"]
-                message = "Test4"
+                message = str(job.process_graph_id)
                 # Get file_paths
                 filter_args = process_nodes[0]["args"]
-                message = filter_args
+                message = message + ";:"+str(filter_args)
 
                 # quick fix
-                spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
+                if filter_args["extent"]:
+                    spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
                                   filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
@@ -203,7 +205,7 @@ class JobService:
                 if response["status"] == "error":
                     raise Exception(response)
                 #message = "Test6"
-
+                start = datetime.datetime.now()
                 query = self.handle_query(response["data"], filter_args)
 
                 filter_args["file_paths"] = response["data"]
@@ -213,6 +215,9 @@ class JobService:
                 # message = str(query)
 
                 self.assign_query(query.pid, job_id)
+                end = datetime.datetime.now()
+                delta = end-start
+                message = "Query: "+str(int(delta.total_seconds() * 1000))
 
                 #message = str(self.get_provenance())
                 # TODO: Calculate storage size and get storage class
@@ -242,14 +247,19 @@ class JobService:
 
                 # message = str(result_set)
 
-                job.status = "finished " + str(message)
-                self.db.commit()
+
+                #self.db.commit()
+
                 #process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
 
                 #if process_graph:
                 #    process_graph = process_graph.process_graph
-
+                start = datetime.datetime.now()
                 job.metrics = self.create_context_model(job_id)
+                end = datetime.datetime.now()
+                delta = end-start
+                message += "## CM: " + str(int(delta.total_seconds() * 1000))
+                job.status = "finished " + str(message)
                 self.db.commit()
                 return
             except Exception as exp:
@@ -260,13 +270,14 @@ class JobService:
 
     @rpc
     def create_context_model(self, job_id):
-
+        user_id = "openeouser"
         job = self.db.query(Job).filter_by(id=job_id).first()
         query = self.get_input_pid(job_id)
 
         context_model = {}
         # processing mockup
-        output_hash = sha256(("OUTPUT"+str(job_id)).encode('utf-8')).hexdigest()
+        process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
+        output_hash = sha256(("OUTPUT"+str(process_graph)).encode('utf-8')).hexdigest()
 
         context_model['output_data'] = output_hash
         context_model['input_data'] = query.pid
@@ -399,8 +410,13 @@ class JobService:
         norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
         print(norm_hash)
         result_list = str(result_files)
+        # TESTCASE1
+        result_list = result_list.replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
+                                          "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
         result_list = result_list.encode('utf-8')
         result_list = result_list.strip()
+
+
         result_hash = sha256(result_list).hexdigest()
 
         existing = self.db.query(Query).filter_by(norm_hash=norm_hash, result_hash=result_hash).first()
@@ -481,7 +497,9 @@ class JobService:
             raise Exception(response)
 
         filter_args["file_paths"] = response["data"]
-
+        # TESTCASE1
+        filter_args["file_paths"] = filter_args["file_paths"].replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
+                                          "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
         return filter_args["file_paths"]
 
     def run_cmd(self, command):
