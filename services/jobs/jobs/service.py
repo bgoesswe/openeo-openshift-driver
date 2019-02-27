@@ -336,6 +336,35 @@ class JobService:
         }
 
     @rpc
+    def diff(self, job_id: str, title: str=None, description: str=None, output: dict=None,
+                   plan: str=None, budget: int=None):
+        user_id = "openeouser"
+        #try:
+        #    process_response = self.process_graphs_service.create(
+        #        user_id=user_id,
+        #        **{"process_graph": process_graph})
+
+            #if process_response["status"] == "error":
+            #    return process_response
+
+            #process_graph_id = process_response["service_data"]
+
+            #job = Job(user_id, process_graph_id, title, description, output, plan, budget)
+
+            #job_id = str(job.id)
+            #self.db.add(job)
+            #self.db.commit()
+
+        return {
+                "status": "success",
+                "code": 201,
+                "headers": {"Location": "jobs/" + user_id}
+        }
+        #except Exception as exp:
+        #    return ServiceException(500, user_id, str(exp),
+        #                            links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
+
+    @rpc
     def version_timestamp(self, timestamp: str):
 
         version_info = self.get_git()
