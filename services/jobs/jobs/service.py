@@ -17,6 +17,10 @@ from .dependencies.template_controller import TemplateController
 import time
 import random
 import datetime
+
+from git import Repo
+from datetime import datetime
+import pytz
 service_name = "jobs"
 
 
@@ -85,6 +89,12 @@ class JobService:
 
             if query:
                 result["input_data"] = query.pid
+
+            version_timestamp = datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+
+            version_timestamp = version_timestamp.strftime('%Y%m%d%H%M%S.%f')
+
+            result["metrics"]["back_end"] = "http://openeo.local.127.0.0.1.nip.io/version/"+version_timestamp
 
             return {
                 "status": "success",
@@ -208,7 +218,7 @@ class JobService:
                 start = datetime.datetime.now()
                 query = self.handle_query(response["data"], filter_args)
 
-                filter_args["file_paths"] = response["data"]
+                #filter_args["file_paths"] = response["data"]
                 # job.status = "running "+str(query.normalized)
                 # self.db.commit()
 
@@ -217,7 +227,7 @@ class JobService:
                 self.assign_query(query.pid, job_id)
                 end = datetime.datetime.now()
                 delta = end-start
-                message = "Query: "+str(int(delta.total_seconds() * 1000))
+                message = str(int(delta.total_seconds() * 1000))
 
                 #message = str(self.get_provenance())
                 # TODO: Calculate storage size and get storage class
@@ -265,7 +275,6 @@ class JobService:
             except Exception as exp:
                 job.status = "error: " + exp.__str__() + " " + str(message)
                 self.db.commit()
-
             return
 
     @rpc
@@ -281,7 +290,7 @@ class JobService:
 
         context_model['output_data'] = output_hash
         context_model['input_data'] = query.pid
-        context_model['openeo_api'] = "0.0.2"
+        context_model['openeo_api'] = "0.3.1"
         #context_model['process_graph'] = process_graph
         context_model['job_id'] = job_id
         context_model['code_env'] = ["alembic==0.9.9",
@@ -326,7 +335,7 @@ class JobService:
         return context_model
 
     @rpc
-    def version(self):
+    def version_current(self):
 
         version_info = self.get_git()
         return {
@@ -335,42 +344,56 @@ class JobService:
             "data": version_info
         }
 
+    def get_commit_by_timestamp(self, timestamp):
+
+        try:
+            repo = Repo("openeo-openshift-driver/")
+
+            timestamp = datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f')  # datetime(2018, 5, 5, 23, 30,tzinfo=utc)
+            timestamp = pytz.utc.localize(timestamp)
+
+            date_buffer = None
+            git_info = {}
+            for commit in repo.iter_commits("master"):
+                commit_date = commit.committed_datetime
+                if commit_date <= timestamp:
+                    if date_buffer:
+                        if commit_date > date_buffer:
+                            date_buffer = commit_date
+                            git_info["branch"] = commit.name_rev.split(" ")[1]
+                            git_info["commit"] = commit.name_rev.split(" ")[0]
+
+                    else:
+                        date_buffer = commit_date
+                        git_info["branch"] = commit.name_rev.split(" ")[1]
+                        git_info["commit"] = commit.name_rev.split(" ")[0]
+
+        except(Exception):
+            return None
+
+        return git_info
+
+
     @rpc
-    def diff(self, job_id: str, title: str=None, description: str=None, output: dict=None,
-                   plan: str=None, budget: int=None):
-        user_id = "openeouser"
-        #try:
-        #    process_response = self.process_graphs_service.create(
-        #        user_id=user_id,
-        #        **{"process_graph": process_graph})
+    def version(self, timestamp: str):
 
-            #if process_response["status"] == "error":
-            #    return process_response
+        git_info = self.get_commit_by_timestamp(timestamp)
 
-            #process_graph_id = process_response["service_data"]
-
-            #job = Job(user_id, process_graph_id, title, description, output, plan, budget)
-
-            #job_id = str(job.id)
-            #self.db.add(job)
-            #self.db.commit()
-
-        return {
-                "status": "success",
-                "code": 201,
-                "headers": {"Location": "jobs/" + user_id}
-        }
-        #except Exception as exp:
-        #    return ServiceException(500, user_id, str(exp),
-        #                            links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
-
-    @rpc
-    def version_timestamp(self, timestamp: str):
+        if not git_info:
+            return {
+                "status": "error",
+                "code": 500,
+                "data": "timestamp is not formatted correctly, format e.g. 20180528101608.659892"
+            }
 
         version_info = self.get_git()
+        version_info["branch"] = git_info["branch"]
+        version_info["commit"] = git_info["commit"]
+        version_info["diff"] = "None"
+        version_info["timestamp"] = str(datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f'))
 
         return {
-            "status": "success",
+            "status": "success ",
             "code": 200,
             "data": version_info
         }
@@ -438,10 +461,15 @@ class JobService:
         print(normalized)
         norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
         print(norm_hash)
-        result_list = str(result_files)
+
+        result_list = str(result_files).split("]")[0]
+        result_list += "]"
+        result_list = result_list.replace(" ", "")
+        result_list = result_list.replace("\t", "")
+        result_list = result_list.replace("\n", "")
         # TESTCASE1
-        result_list = result_list.replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
-                                          "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
+        #result_list = result_list.replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
+        #                                  "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
         result_list = result_list.encode('utf-8')
         result_list = result_list.strip()
 
@@ -455,7 +483,7 @@ class JobService:
 
         dataset_pid = str(filter_args["name"])
         orig_query = str(filter_args)
-        metadata = str({"number_of_files": len(result_files)})
+        metadata = str({"number_of_files": len(result_files.split("\n"))})
 
         new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
                  result_hash, metadata)
@@ -527,8 +555,8 @@ class JobService:
 
         filter_args["file_paths"] = response["data"]
         # TESTCASE1
-        filter_args["file_paths"] = filter_args["file_paths"].replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
-                                          "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
+        #filter_args["file_paths"] = filter_args["file_paths"].replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
+        #                                  "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
         return filter_args["file_paths"]
 
     def run_cmd(self, command):

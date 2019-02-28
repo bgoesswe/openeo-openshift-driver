@@ -28,7 +28,8 @@ with ctx:
     gateway.add_endpoint("/jobs/<job_id>/results", func=rpc.jobs.process, auth=True, validate=True, methods=["POST"], is_async=True)
     gateway.add_endpoint("/jobs/<job_id>/results", func=rpc.jobs.cancel_processing, auth=True, validate=True, methods=["DELETE"])
     # Additional endpoints
-    gateway.add_endpoint("/version", func=rpc.jobs.version, auth=False, validate=False)
+    gateway.add_endpoint("/version", func=rpc.jobs.version_current, auth=False, validate=False)
+    gateway.add_endpoint("/version/<timestamp>", func=rpc.jobs.version, auth=False, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False, methods=["POST"])
 
