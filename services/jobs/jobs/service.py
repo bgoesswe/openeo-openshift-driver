@@ -198,10 +198,18 @@ class JobService:
                 #message = message + ";:"+str(filter_args)
 
                 if filter_args["data_pid"]:
+
                     query = self.get_query_by_pid(filter_args["data_pid"].strip())
                     filter_args_str = query.original.replace("'", "\"")
                     filter_args_str = filter_args_str.replace("None", "null")
-                    filter_args = json.loads(filter_args_str)
+                    filter_args_buf = json.loads(filter_args_str)
+                    if filter_args["data_id"]:
+                        filter_args_buf["data_id"] = filter_args["data_id"]
+                    if filter_args["extent"]:
+                        filter_args_buf["extent"] = filter_args["extent"]
+                    if filter_args["time"]:
+                        filter_args_buf["time"] = filter_args["time"]
+                    filter_args = filter_args_buf
 
                 #message = str(filter_args)
 
@@ -223,6 +231,8 @@ class JobService:
                     raise Exception(response)
                 #message = message + "After Exception ;"
                 start = datetime.datetime.now()
+
+
 
 
                 query = self.handle_query(response["data"], filter_args)
@@ -463,7 +473,12 @@ class JobService:
 
     def handle_query(self, result_files, filter_args):
 
-        filter_args["data_pid"] = None
+
+        # remove query independent filter data
+        if "data_pid" in filter_args:
+            filter_args.pop("data_pid")
+
+
         # normalized query, sorted query...
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
@@ -563,11 +578,34 @@ class JobService:
         if response["status"] == "error":
             raise Exception(response)
 
+        result_list = str(response["data"]).split("]")[0]
+        result_list += "]"
+        result_list = result_list.replace(" ", "")
+        result_list = result_list.replace("\t", "")
+        result_list = result_list.replace("\n", "")
+        # TESTCASE1
+        # result_list = result_list.replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
+        #                                  "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
+        result_list = result_list.encode('utf-8')
+        result_list = result_list.strip()
+
+        result_hash = sha256(result_list).hexdigest()
+
         filter_args["file_paths"] = response["data"]
+
+        output = {
+            "file_paths": (str(response["data"]).split("]")[0])+"]"
+        }
+
+        if result_hash != query.result_hash:
+            output["state"] = "DIFF"
+        else:
+            output["state"] = "EQUAL"
+
         # TESTCASE1
         #filter_args["file_paths"] = filter_args["file_paths"].replace("S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405",
         #                                  "S2A_MSIL1C_20170104T101402_N0204_R022_T32TPR_20170104T101405_NEW")
-        return filter_args["file_paths"]
+        return output
 
     def run_cmd(self, command):
         import subprocess

@@ -120,7 +120,16 @@ class DataService:
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
 
+            #spatial_extent = [49.041469, 9.497681, 46.517296, 17.171631]
 
+            #temporal = "{}/{}".format('2017-01-01', '2017-01-31')
+
+            #product_record = self.get_records(
+            #    detail="full",
+            #    user_id=user_id,
+            #    name=name,
+            #    spatial_extent=spatial_extent,
+            #    temporal_extent=temporal)
 
             return {
                 "status": "success",
