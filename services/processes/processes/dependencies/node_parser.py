@@ -10,7 +10,8 @@ class NodesWrapper:
             "bands": None,
             "extent": None,
             "derived_from": None,
-            "license": None
+            "license": None,
+            "data_pid": None
         }
 
     def parse_process_graph(self, process_graph: dict, processes: list) -> list:
@@ -37,6 +38,8 @@ class NodesWrapper:
             self.filters["extent"] = filter_args
         if process_id == "filter_daterange":
             self.filters["time"] = filter_args
+        if process_id == "data_pid":
+            self.filters["data_pid"] = filter_args
 
 
     def parse_nodes(self, node_graph: dict, processes: list):

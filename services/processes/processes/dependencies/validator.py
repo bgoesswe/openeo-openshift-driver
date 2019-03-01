@@ -43,8 +43,8 @@ class ValidatorWrapper:
                 continue
 
             # Check if product is available at the back-end
-            if arg_id == "data_id" and not any(p['data_id'] == args_payload[arg_id] for p in self.products):
-                raise ValidationError("Product '{0}' is not available.".format(args_payload[arg_id]))
+            #if arg_id == "data_id" and not any(p['data_id'] == args_payload[arg_id] for p in self.products):
+            #    raise ValidationError("Product '{0}' is not available.".format(args_payload[arg_id]))
 
             # Validate argument using JSON Schema
             if arg_id in args_payload:

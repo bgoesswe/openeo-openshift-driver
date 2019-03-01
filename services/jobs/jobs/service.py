@@ -19,7 +19,6 @@ import random
 import datetime
 
 from git import Repo
-from datetime import datetime
 import pytz
 service_name = "jobs"
 
@@ -90,11 +89,11 @@ class JobService:
             if query:
                 result["input_data"] = query.pid
 
-            version_timestamp = datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+            version_timestamp = datetime.datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
 
             version_timestamp = version_timestamp.strftime('%Y%m%d%H%M%S.%f')
 
-            result["metrics"]["back_end"] = "http://openeo.local.127.0.0.1.nip.io/version/"+version_timestamp
+            result["metrics"]["back_end_timestamp"] = version_timestamp
 
             return {
                 "status": "success",
@@ -173,30 +172,38 @@ class JobService:
     @rpc
     def process(self, user_id: str, job_id: str):
             user_id = "openeouser"
-            message = "Test0"
+            #message = "Test0"
             try:
                 job = self.db.query(Job).filter_by(id=job_id).first()
-                message = "Test1"+str(job_id)
+                #message = "Test1"+str(job_id)
                 valid, response = self.authorize(user_id, job_id, job)
                 if not valid:
                     raise Exception(response)
 
                 job.status = "running "+str(job.process_graph_id)
                 self.db.commit()
-                message = "Test2"
+                #message = "Test2"
                 # Get process nodes
                 response = self.process_graphs_service.get_nodes(
                     user_id=user_id,
                     process_graph_id=job.process_graph_id)
-                message = "Test3"
+                #message = "Test3"
                 if response["status"] == "error":
                     raise Exception(response)
 
                 process_nodes = response["data"]
-                message = str(job.process_graph_id)
+                #message = str(job.process_graph_id)
                 # Get file_paths
                 filter_args = process_nodes[0]["args"]
-                message = message + ";:"+str(filter_args)
+                #message = message + ";:"+str(filter_args)
+
+                if filter_args["data_pid"]:
+                    query = self.get_query_by_pid(filter_args["data_pid"].strip())
+                    filter_args_str = query.original.replace("'", "\"")
+                    filter_args_str = filter_args_str.replace("None", "null")
+                    filter_args = json.loads(filter_args_str)
+
+                #message = str(filter_args)
 
                 # quick fix
                 if filter_args["extent"]:
@@ -204,18 +211,20 @@ class JobService:
                                   filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
-                message = str(spatial_extent) + "##" + temporal
+                #message = message + " -- " + str(spatial_extent) + "##" + temporal
                 response = self.data_service.get_records(
-                    detail="file_path",
-                    user_id=user_id,
-                    name=filter_args["name"],
-                    spatial_extent=spatial_extent,
-                    temporal_extent=temporal)
-                #message = message #+ " ; " + str(response["data"])
+                   detail="file_path",
+                   user_id=user_id,
+                   name=filter_args["name"],
+                   spatial_extent=spatial_extent,
+                   temporal_extent=temporal)
+                #message = message +"After Get Records ;" #+ " ; " + str(response["data"])
                 if response["status"] == "error":
                     raise Exception(response)
-                #message = "Test6"
+                #message = message + "After Exception ;"
                 start = datetime.datetime.now()
+
+
                 query = self.handle_query(response["data"], filter_args)
 
                 #filter_args["file_paths"] = response["data"]
@@ -228,7 +237,7 @@ class JobService:
                 end = datetime.datetime.now()
                 delta = end-start
                 message = str(int(delta.total_seconds() * 1000))
-
+                #message = message + "After query staff ;"
                 #message = str(self.get_provenance())
                 # TODO: Calculate storage size and get storage class
                 # TODO: Implement Ressource Management
@@ -349,7 +358,7 @@ class JobService:
         try:
             repo = Repo("openeo-openshift-driver/")
 
-            timestamp = datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f')  # datetime(2018, 5, 5, 23, 30,tzinfo=utc)
+            timestamp = datetime.datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f')  # datetime(2018, 5, 5, 23, 30,tzinfo=utc)
             timestamp = pytz.utc.localize(timestamp)
 
             date_buffer = None
@@ -389,8 +398,8 @@ class JobService:
         version_info = self.get_git()
         version_info["branch"] = git_info["branch"]
         version_info["commit"] = git_info["commit"]
-        version_info["diff"] = "None"
-        version_info["timestamp"] = str(datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f'))
+        #version_info["diff"] = "None"
+        version_info["timestamp"] = str(datetime.datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f'))
 
         return {
             "status": "success ",
@@ -454,6 +463,7 @@ class JobService:
 
     def handle_query(self, result_files, filter_args):
 
+        filter_args["data_pid"] = None
         # normalized query, sorted query...
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
@@ -565,9 +575,9 @@ class JobService:
         return result.stdout.decode("utf-8")
 
     def get_git(self):
-        import hashlib
+
         git_cmd = "git --git-dir=openeo-openshift-driver/.git "
-        # print(git_cmd)
+
         #URL = "https://github.com/bgoesswe/openeo-openshift-driver.git"
         #CMD_GIT_CLONE = "{0} clone {1}".format(git_cmd, URL)
         #CMD_CD_GIT = "cd openeo-openshift-driver"
@@ -575,33 +585,31 @@ class JobService:
         CMD_GIT_URL = "{0} config --get remote.origin.url".format(git_cmd)
         CMD_GIT_BRANCH = "{0} branch".format(git_cmd)
         CMD_GIT_COMMIT = "{0} log".format(git_cmd)  # first line
-        CMD_GIT_DIFF = "{0} diff".format(git_cmd)  # Should do that ?
+        #CMD_GIT_DIFF = "{0} diff".format(git_cmd)  # Should do that ?
 
         print("Get Git Info")
 
         #clone = self.run_cmd(CMD_GIT_CLONE)
 
-
-
         #cd = self.run_cmd(CMD_CD_GIT)
 
         git_url = self.run_cmd(CMD_GIT_URL).split("\n")[0]
         git_commit = self.run_cmd(CMD_GIT_COMMIT).split("\n")[0].replace("commit", "").strip()
-        git_diff = self.run_cmd(CMD_GIT_DIFF)
+        #git_diff = self.run_cmd(CMD_GIT_DIFF)
         # remove not needed encodings
-        git_diff = git_diff.replace("\n", "")
-        git_diff = git_diff.replace("\n", "")
-        git_diff = git_diff.strip()
+        #git_diff = git_diff.replace("\n", "")
+        #git_diff = git_diff.replace("\n", "")
+        #git_diff = git_diff.strip()
 
-        git_diff = hashlib.sha256(git_diff.encode("utf-8"))
-        git_diff = git_diff.hexdigest()
+        #git_diff = hashlib.sha256(git_diff.encode("utf-8"))
+        #git_diff = git_diff.hexdigest()
 
         git_branch = self.run_cmd(CMD_GIT_BRANCH).replace("*", "").strip()
 
         cm_git = {'url': git_url,
                   'branch': git_branch,
                   'commit': git_commit,
-                  'diff': git_diff,
+                  #'diff': git_diff,
                   }
 
         return cm_git
