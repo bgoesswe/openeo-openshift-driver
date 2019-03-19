@@ -110,7 +110,30 @@ class ProcessesService:
             }
         except Exception as exp:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
-    
+
+    @rpc
+    def resetdb(self):
+        user_id = "openeouser"
+        message = "; start"
+        try:
+            self.db.query(ProcessNode).delete(synchronize_session='evaluate')
+            message = message + "; deletedPN"
+            self.db.commit()
+            message = message + "; commit"
+            self.db.query(ProcessGraph).delete(synchronize_session='evaluate')
+            message = message + "; deletedPG"
+            self.db.commit()
+            message = message + "; commit"
+
+            return {
+                "status": "success",
+                "code": 200,
+                "data": message
+            }
+        except Exception as exp:
+            return ServiceException(ProcessesService.name, 500, user_id+message, str(exp)+message,
+                                    links=["#tag/Job-Management/paths/~1process_graphs/get"]).to_dict()
+
     # @rpc
     # def get_processes(self, user_id):
     #     try:
@@ -232,7 +255,7 @@ class ProcessesGraphService:
         except Exception as exp:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp),
                     links=["#tag/Job-Management/paths/~1process_graphs/get"]).to_dict()
-    
+
     @rpc
     def create(self, user_id: str, **process_graph_args):
         """The request will ask the back-end to create a new process using the description send in the request body.

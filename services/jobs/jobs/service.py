@@ -166,13 +166,28 @@ class JobService:
             return ServiceException(500, user_id, str(exp),
                 links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
 
+    @rpc
+    def resetdb(self):
+        try:
+            self.db.query(QueryJob).delete(synchronize_session=False)
+            self.db.query(Job).delete(synchronize_session=False)
+            self.db.query(Query).delete(synchronize_session=False)
+            self.db.commit()
+            # self.data_service.resetdb()
 
+        except Exception as exp:
+            return ServiceException(500, "openeouser", str(exp))
 
+        return {
+            "status": "success",
+            "code": 201,
+            "headers": {"Location": "Jobs deleted"}
+        }
 
     @rpc
     def process(self, user_id: str, job_id: str):
             user_id = "openeouser"
-            #message = "Test0"
+            message = "Test0"
             try:
                 job = self.db.query(Job).filter_by(id=job_id).first()
                 #message = "Test1"+str(job_id)
@@ -211,7 +226,7 @@ class JobService:
                         filter_args_buf["time"] = filter_args["time"]
                     filter_args = filter_args_buf
 
-                #message = str(filter_args)
+                message = str(filter_args)
 
                 # quick fix
                 if filter_args["extent"]:
