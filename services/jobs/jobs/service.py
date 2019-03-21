@@ -335,6 +335,7 @@ class JobService:
                                      "chardet==3.0.4",
                                      "enum-compat==0.0.2",
                                      "eventlet==0.19.0",
+                                     "GDAL == 2.2.2",
                                      "gevent==1.3.6",
                                     "greenlet==0.4.14",
                                     "idna==2.7",
@@ -345,6 +346,7 @@ class JobService:
                                     "mock==2.0.0",
                                     "nameko==2.9.0",
                                     "nameko-sqlalchemy==1.4.0",
+                                    "numpy==1.14.1",
                                     "path.py==11.0.1",
                                     "pbr==4.0.4",
                                     "psycopg2==2.7.4",
@@ -360,6 +362,7 @@ class JobService:
                                     "Werkzeug==0.14.1",
                                     "wincertstore==0.2",
                                     "wrapt==1.10.11"]
+
         context_model['interpreter'] = "Python 3.7.1"
         context_model['start_time'] = str(job.created_at)
         context_model['end_time'] = str(job.created_at+datetime.timedelta(random.randint(1, 3), random.randint(0, 59)))#datetime.datetime.fromtimestamp(time.time())
