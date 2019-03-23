@@ -235,12 +235,17 @@ class JobService:
 
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
                 #message = message + " -- " + str(spatial_extent) + "##" + temporal
+
+                now = datetime.now()
+                now = now.strftime("%Y-%m-%d")
+
                 response = self.data_service.get_records(
                    detail="file_path",
                    user_id=user_id,
                    name=filter_args["name"],
                    spatial_extent=spatial_extent,
-                   temporal_extent=temporal)
+                   temporal_extent=temporal,
+                   timestamp=now)
                 #message = message +"After Get Records ;" #+ " ; " + str(response["data"])
                 if response["status"] == "error":
                     raise Exception(response)
@@ -586,12 +591,15 @@ class JobService:
 
         temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
+        timestamp = query.created_at.split(" ")[0]
+
         response = self.data_service.get_records(
             detail="file_path",
             user_id=user_id,
             name=filter_args["name"],
             spatial_extent=spatial_extent,
-            temporal_extent=temporal)
+            temporal_extent=temporal,
+            timestamp=timestamp)
 
         if response["status"] == "error":
             raise Exception(response)

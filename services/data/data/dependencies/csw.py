@@ -142,7 +142,7 @@ class CSWHandler:
 
         return response
 
-    def get_file_paths(self, product: str, bbox: list, start: str, end: str) -> list:
+    def get_file_paths(self, product: str, bbox: list, start: str, end: str, timestamp: str) -> list:
         """Returns the file paths of the records of the specified products
         in the temporal and spatial extents.
 
@@ -151,10 +151,13 @@ class CSWHandler:
             bbox {list} -- The spatial extent of the records
             start {str} -- The start date of the temporal extent
             end {str} -- The end date of the temporal extent
+            timestamp {str} -- The timestamp of the data version, filters by data that was available at that time.
 
         Returns:
             list -- The records data
         """
+
+        date_filter_timestamp = datetime.strptime(timestamp, "%Y-%m-%d")
 
         records=self._get_records(product, bbox, start, end)
 
@@ -166,13 +169,20 @@ class CSWHandler:
             name=path.split("/")[-1].split(".")[0]
             date=item["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:extent"]["gmd:EX_Extent"][
                 "gmd:temporalElement"]["gmd:EX_TemporalExtent"]["gmd:extent"]["gml:TimePeriod"]["gml:beginPosition"][0:10]
+            data_timestamp = \
+            item["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:citation"]["gmd:CI_Citation"]["gmd:date"][
+                "gmd:CI_Date"]["gmd:date"]["gco:Date"]
 
-            response.append(
-                FilePath(
-                    date=date,
-                    name=name,
-                    path=path
-                )
+            date_data_timestamp = datetime.strptime(data_timestamp, "%Y-%m-%d")
+
+            if date_data_timestamp <= date_filter_timestamp:
+                response.append(
+                    FilePath(
+                        date=date,
+                        name=name,
+                        path=path,
+                        timestamp=data_timestamp
+                    )
             )
 
         return response

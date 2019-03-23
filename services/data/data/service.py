@@ -202,7 +202,7 @@ class DataService:
 
     @rpc
     def get_records(self, user_id: str=None, name: str=None, detail: str="full", 
-                    spatial_extent: str=None, temporal_extent: str=None) -> Union[list, dict]:
+                    spatial_extent: str=None, temporal_extent: str=None, timestamp=None) -> Union[list, dict]:
         """The request will ask the back-end for further details about the records of a dataset.
         The records must be filtered by time and space. Different levels of detail can be returned.
 
@@ -241,7 +241,7 @@ class DataService:
                 response = RecordSchema(many=True).dump(records).data
             elif detail == "file_path":
                 file_paths = self.csw_session.get_file_paths(
-                    name, spatial_extent, start, end)
+                    name, spatial_extent, start, end, timestamp)
                 response = FilePathSchema(many=True).dump(file_paths).data
 
             return {

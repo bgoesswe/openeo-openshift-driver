@@ -61,7 +61,8 @@ class Record:
 
 class FilePath:
     """ Schema for a file path """
-    def __init__(self, date:str, name: str, path: str):
+    def __init__(self, date:str, name: str, path: str, timestamp: str):
         self.date = date
         self.name = name
         self.path = path
+        self.timestamp = timestamp
