@@ -171,31 +171,32 @@ class JobService:
 
     @rpc
     def process(self, user_id: str, job_id: str):
+
             user_id = "openeouser"
-            #message = "Test0"
+
             try:
                 job = self.db.query(Job).filter_by(id=job_id).first()
-                #message = "Test1"+str(job_id)
+
                 valid, response = self.authorize(user_id, job_id, job)
                 if not valid:
                     raise Exception(response)
 
                 job.status = "running "+str(job.process_graph_id)
                 self.db.commit()
-                #message = "Test2"
+
                 # Get process nodes
                 response = self.process_graphs_service.get_nodes(
                     user_id=user_id,
                     process_graph_id=job.process_graph_id)
-                #message = "Test3"
+
                 if response["status"] == "error":
                     raise Exception(response)
 
                 process_nodes = response["data"]
-                #message = str(job.process_graph_id)
+
                 # Get file_paths
                 filter_args = process_nodes[0]["args"]
-                #message = message + ";:"+str(filter_args)
+
 
                 if filter_args["data_pid"]:
 
@@ -211,7 +212,7 @@ class JobService:
                         filter_args_buf["time"] = filter_args["time"]
                     filter_args = filter_args_buf
 
-                #message = str(filter_args)
+
 
                 # quick fix
                 if filter_args["extent"]:
@@ -219,21 +220,18 @@ class JobService:
                                   filter_args["extent"]["extent"]["south"], filter_args["extent"]["extent"]["east"]]
 
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
-                #message = message + " -- " + str(spatial_extent) + "##" + temporal
+
                 response = self.data_service.get_records(
                    detail="file_path",
                    user_id=user_id,
                    name=filter_args["name"],
                    spatial_extent=spatial_extent,
                    temporal_extent=temporal)
-                #message = message +"After Get Records ;" #+ " ; " + str(response["data"])
+
                 if response["status"] == "error":
                     raise Exception(response)
-                #message = message + "After Exception ;"
+
                 start = datetime.datetime.now()
-
-
-
 
                 query = self.handle_query(response["data"], filter_args)
 
@@ -247,8 +245,7 @@ class JobService:
                 end = datetime.datetime.now()
                 delta = end-start
                 message = str(int(delta.total_seconds() * 1000))
-                #message = message + "After query staff ;"
-                #message = str(self.get_provenance())
+
                 # TODO: Calculate storage size and get storage class
                 # TODO: Implement Ressource Management
                 # storage_class = "storage-write"
@@ -283,11 +280,16 @@ class JobService:
 
                 #if process_graph:
                 #    process_graph = process_graph.process_graph
+
+                # time meassuring needs to be improved
+
                 start = datetime.datetime.now()
                 job.metrics = self.create_context_model(job_id)
                 end = datetime.datetime.now()
                 delta = end-start
+                # debugging output DELME
                 message += "## CM: " + str(int(delta.total_seconds() * 1000))
+
                 job.status = "finished " + str(message)
                 self.db.commit()
                 return
@@ -298,20 +300,25 @@ class JobService:
 
     @rpc
     def create_context_model(self, job_id):
+        """ Creates the context model entry of the given job id.
+            This method has to be called after the job execution.
+            :param job_id: String Identifier of the job.
+            :return: context_model: Dict representing the context model entry.
+        """
         user_id = "openeouser"
         job = self.db.query(Job).filter_by(id=job_id).first()
         query = self.get_input_pid(job_id)
 
         context_model = {}
-        # processing mockup
+        # MOCK UP for the Evaluation
         process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
         output_hash = sha256(("OUTPUT"+str(process_graph)).encode('utf-8')).hexdigest()
 
         context_model['output_data'] = output_hash
         context_model['input_data'] = query.pid
         context_model['openeo_api'] = "0.3.1"
-        #context_model['process_graph'] = process_graph
         context_model['job_id'] = job_id
+
         context_model['code_env'] = ["alembic==0.9.9",
                                      "amqp==1.4.9",
                                      "anyjson==0.3.3",
@@ -355,7 +362,9 @@ class JobService:
 
     @rpc
     def version_current(self):
-
+        """
+            Returns the current version of the back end.
+        """
         version_info = self.get_git()
         return {
             "status": "success",
@@ -364,6 +373,9 @@ class JobService:
         }
 
     def get_commit_by_timestamp(self, timestamp):
+        """
+            Returns the version of the back end, at the timestamp
+        """
 
         try:
             repo = Repo("openeo-openshift-driver/")
@@ -402,7 +414,7 @@ class JobService:
             return {
                 "status": "error",
                 "code": 500,
-                "data": "timestamp is not formatted correctly, format e.g. 20180528101608.659892"
+                "data": "timestamp is not formatted correctly, format e.g. 20180528101608.659892 => %Y%m%d%H%M%S.%f"
             }
 
         version_info = self.get_git()
