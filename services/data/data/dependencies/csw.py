@@ -307,6 +307,92 @@ class CSWHandler:
 
         return record_next, records
 
+
+    def get_query(self, product: str=None, bbox: list=None, start: str=None, end: str=None, series: bool=False) -> list:
+        """Parses the XML request for the CSW server and collects the responsed by the
+        batch triggered _get_single_records function.
+
+        Keyword Arguments:
+            product {str} -- The identifier of the product (default: {None})
+            bbox {list} -- The spatial extent of the records (default: {None})
+            start {str} -- The end date of the temporal extent (default: {None})
+            end {str} -- The end date of the temporal extent (default: {None})
+            series {bool} -- Specifier if series (products) or records are queried (default: {False})
+
+        Raises:
+            CWSError -- If a problem occures while communicating with the CSW server
+
+        Returns:
+            list -- The records data
+        """
+
+        # Parse the XML request by injecting the query data into the XML templates
+        output_schema="http://www.opengis.net/cat/csw/2.0.2" if series is True else "http://www.isotc211.org/2005/gmd"
+
+        xml_filters=[]
+
+        if series:
+            xml_filters.append(xml_series)
+
+        if product:
+            if series:
+                xml_filters.append(xml_product.format(
+                    property="dc:identifier", product=product))
+            else:
+                xml_filters.append(xml_product.format(
+                    property="apiso:ParentIdentifier", product=product))
+
+        if start and not series:
+            xml_filters.append(xml_begin.format(start=start))
+
+        if end and not series:
+            xml_filters.append(xml_end.format(end=end))
+
+        if bbox and not series:
+            xml_filters.append(xml_bbox.format(bbox=bbox))
+
+        if len(xml_filters) == 0:
+            return CWSError("Please provide fiters on the data (bounding box, start, end)")
+
+        filter_parsed=""
+        if len(xml_filters) == 1:
+            filter_parsed=xml_filters[0]
+        else:
+            tmp_filter=""
+            for xml_filter in xml_filters:
+                tmp_filter += xml_filter
+            filter_parsed=xml_and.format(children=tmp_filter)
+
+        # While still data is available send requests to the CSW server (-1 if not more data is available)
+        all_records=[]
+        record_next=1
+
+        xml_request=self._get_query(record_next, filter_parsed, output_schema)
+
+
+        return xml_request
+
+    def _get_query(self, start_position: int, filter_parsed: dict, output_schema: str) -> list:
+        """Sends a single request to the CSW server, requesting data about records or products.
+
+        Arguments:
+            start_position {int} -- The request start position
+            filter_parsed {dict} -- The prepared XML template
+            output_schema {str} -- The desired output schema of the response
+
+        Raises:
+            CWSError -- If a problem occures while communicating with the CSW server
+
+        Returns:
+            list -- The returned record or product data
+        """
+
+        # Parse the XML by injecting iteration dependend variables
+        xml_request=xml_base.format(
+            children=filter_parsed, output_schema=output_schema, start_position=start_position)
+
+        return xml_request
+
 class CSWSession(DependencyProvider):
     """The CSWSession is the DependencyProvider of the CSWHandler.
     """

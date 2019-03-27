@@ -101,6 +101,7 @@ class DataService:
         user_id = "openeouser"
         querydata = self.jobs_service.get_querydata_by_pid(name)
         dataset = self.jobs_service.get_dataset_by_pid(name)
+        timestamp = self.jobs_service.get_querytimestamp_by_pid(name)
 
         result_set = None
 
@@ -118,20 +119,10 @@ class DataService:
                 response["query"] = querydata
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
+                response.pop('bands', None)
                 response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
                 response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
-
-
-            #spatial_extent = [49.041469, 9.497681, 46.517296, 17.171631]
-
-            #temporal = "{}/{}".format('2017-01-01', '2017-01-31')
-
-            #product_record = self.get_records(
-            #    detail="full",
-            #    user_id=user_id,
-            #    name=name,
-            #    spatial_extent=spatial_extent,
-            #    temporal_extent=temporal)
+                response["execution-time"] = timestamp
 
             return {
                 "status": "success",
@@ -159,11 +150,13 @@ class DataService:
         user_id = "openeouser"
         querydata = self.jobs_service.get_querydata_by_pid(name)
         dataset = self.jobs_service.get_dataset_by_pid(name)
+        timestamp = self.jobs_service.get_querytimestamp_by_pid(name)
 
         result_set = None
 
         if querydata:
-            result_set = self.jobs_service.reexecute_query(user_id, name)
+            pid = name
+            result_set = self.jobs_service.reexecute_query(user_id, pid)
             name = dataset
 
         try:
@@ -177,6 +170,10 @@ class DataService:
                 response["query"] = querydata
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
+                response.pop('bands', None)
+                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
+                response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
+                response["execution-time"] = timestamp
 
             # spatial_extent = [49.041469, 9.497681, 46.517296, 17.171631]
 
@@ -254,3 +251,31 @@ class DataService:
                 links=["#tag/EO-Data-Discovery/paths/~1data~1{name}~1records/get"]).to_dict()
         except Exception as exp:
             return ServiceException(500, user_id, str(exp)).to_dict()
+
+    @rpc
+    def get_query(self, user_id: str = None, name: str = None, detail: str = "full",
+                  spatial_extent: str = None, temporal_extent: str = None, timestamp=None) -> dict:
+        user_id = "openeouser"
+        try:
+            name = self.arg_parser.parse_product(name)
+
+            # Parse the argeuments
+            if spatial_extent:
+                spatial_extent = self.arg_parser.parse_spatial_extent(spatial_extent)
+            if temporal_extent:
+                start, end = self.arg_parser.parse_temporal_extent(temporal_extent)
+            else:
+                start = None
+                end = None
+
+            orig_query = self.csw_session.get_query(
+                name, spatial_extent, start, end)
+
+            return {
+                "status": "success",
+                "code": 200,
+                "data": str(orig_query)
+            }
+        except ValidationError as exp:
+            return ServiceException(400, user_id, str(exp), internal=False,
+                                    links=["#tag/EO-Data-Discovery/paths/~1data~1{name}~1records/get"]).to_dict()
