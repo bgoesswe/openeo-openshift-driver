@@ -166,8 +166,23 @@ class JobService:
             return ServiceException(500, user_id, str(exp),
                 links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
 
+    @rpc
+    def resetdb(self):
+        try:
+            self.db.query(QueryJob).delete(synchronize_session=False)
+            self.db.query(Job).delete(synchronize_session=False)
+            self.db.query(Query).delete(synchronize_session=False)
+            self.db.commit()
+            # self.data_service.resetdb()
 
+        except Exception as exp:
+            return ServiceException(500, "openeouser", str(exp))
 
+        return {
+            "status": "success",
+            "code": 201,
+            "headers": {"Location": "Jobs deleted"}
+        }
 
     @rpc
     def process(self, user_id: str, job_id: str):
@@ -212,8 +227,6 @@ class JobService:
                         filter_args_buf["time"] = filter_args["time"]
                     filter_args = filter_args_buf
 
-
-
                 # quick fix
                 if filter_args["extent"]:
                     spatial_extent = [filter_args["extent"]["extent"]["north"], filter_args["extent"]["extent"]["west"],
@@ -221,12 +234,19 @@ class JobService:
 
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
+                #message = message + " -- " + str(spatial_extent) + "##" + temporal
+
+                now = datetime.now()
+                now = now.strftime("%Y-%m-%d")
+
+
                 response = self.data_service.get_records(
                    detail="file_path",
                    user_id=user_id,
                    name=filter_args["name"],
                    spatial_extent=spatial_extent,
-                   temporal_extent=temporal)
+                   temporal_extent=temporal,
+                   timestamp=now)
 
                 if response["status"] == "error":
                     raise Exception(response)
@@ -327,6 +347,7 @@ class JobService:
                                      "chardet==3.0.4",
                                      "enum-compat==0.0.2",
                                      "eventlet==0.19.0",
+                                     "GDAL == 2.2.2",
                                      "gevent==1.3.6",
                                     "greenlet==0.4.14",
                                     "idna==2.7",
@@ -337,6 +358,7 @@ class JobService:
                                     "mock==2.0.0",
                                     "nameko==2.9.0",
                                     "nameko-sqlalchemy==1.4.0",
+                                    "numpy==1.14.1",
                                     "path.py==11.0.1",
                                     "pbr==4.0.4",
                                     "psycopg2==2.7.4",
@@ -352,6 +374,7 @@ class JobService:
                                     "Werkzeug==0.14.1",
                                     "wincertstore==0.2",
                                     "wrapt==1.10.11"]
+
         context_model['interpreter'] = "Python 3.7.1"
         context_model['start_time'] = str(job.created_at)
         context_model['end_time'] = str(job.created_at+datetime.timedelta(random.randint(1, 3), random.randint(0, 59)))#datetime.datetime.fromtimestamp(time.time())
@@ -580,12 +603,15 @@ class JobService:
 
         temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
+        timestamp = query.created_at.split(" ")[0]
+
         response = self.data_service.get_records(
             detail="file_path",
             user_id=user_id,
             name=filter_args["name"],
             spatial_extent=spatial_extent,
-            temporal_extent=temporal)
+            temporal_extent=temporal,
+            timestamp=timestamp)
 
         if response["status"] == "error":
             raise Exception(response)

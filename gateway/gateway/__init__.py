@@ -10,6 +10,7 @@ ctx, rpc = gateway.get_rpc_context()
 with ctx:
     gateway.add_endpoint("/collections", func=rpc.data.get_all_products, auth=False, validate=True)
     gateway.add_endpoint("/collections/<name>", func=rpc.data.get_product_detail, auth=False, validate=True)
+    gateway.add_endpoint("/collections/<name>/result", func=rpc.data.get_product_detail_filelist, auth=False, validate=True)
     gateway.add_endpoint("/collections/<name>/records", func=rpc.data.get_records, auth=True, validate=True)
     gateway.add_endpoint("/processes", func=rpc.processes.get_all, auth=True, validate=True)
     gateway.add_endpoint("/processes", func=rpc.processes.create, auth=True, validate=True, methods=["POST"], role="admin")
@@ -30,6 +31,8 @@ with ctx:
     # Additional endpoints
     gateway.add_endpoint("/version", func=rpc.jobs.version_current, auth=False, validate=False)
     gateway.add_endpoint("/version/<timestamp>", func=rpc.jobs.version, auth=False, validate=False)
+    gateway.add_endpoint("/resetjobsdb", func=rpc.jobs.resetdb, auth=False, validate=False)
+    gateway.add_endpoint("/resetpgdb", func=rpc.processes.resetdb, auth=False, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False, methods=["POST"])
 

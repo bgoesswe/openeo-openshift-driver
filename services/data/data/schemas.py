@@ -49,3 +49,4 @@ class FilePathSchema(Schema):
     date = fields.String(required=True)
     name = fields.String(required=True)
     path = fields.String(required=True)
+    timestamp = fields.String(required=True)
