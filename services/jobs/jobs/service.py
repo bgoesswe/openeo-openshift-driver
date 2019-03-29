@@ -246,7 +246,7 @@ class JobService:
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
                 now = datetime.datetime.now()
-                now = now.strftime('%Y-%m-%d-%H:%M:%S.%f')
+                now = now.strftime('%Y-%m-%d %H:%M:%S.%f')
 
                 # simulating updated records
                 updated = self.process_graphs_service.get_updated(user_id=user_id,
@@ -533,7 +533,7 @@ class JobService:
         # extract additional information from the input data.
         dataset_pid = str(filter_args["name"])
         orig_query = str(orig_query)
-        metadata = str({"number_of_files": len(result_files.split("\n"))})
+        metadata = str({"result_files": len(result_files.split("\n"))})
 
         new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
                  result_hash, metadata)
@@ -562,6 +562,16 @@ class JobService:
         queryjob = self.db.query(QueryJob).filter_by(job_id=job_id).first()
 
         return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
+
+    def get_job_by_query(self, query_pid):
+        """
+            Get query PID that was used by the job with the given job id.
+            :param job_id: String job ID
+            :return: query: Query that was used by the job with the job_id identifier.
+        """
+        queryjob = self.db.query(QueryJob).filter_by(query_pid=query_pid).first()
+
+        return self.db.query(Job).filter_by(id=queryjob.job_id).first()
 
     @rpc
     def get_query_by_pid(self, query_pid):
@@ -631,7 +641,7 @@ class JobService:
         return timestamp
 
     @rpc
-    def reexecute_query(self, user_id, query_pid):
+    def reexecute_query(self, user_id, query_pid, deleted=False):
         """
         Re-executes the Query with the given query pid and returns the resulting files of the query execution.
         It also returns a state of the re-execution where it is stated if the resulting files differ the original
@@ -658,7 +668,19 @@ class JobService:
 
         temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
-        timestamp = query.created_at.split(" ")[0]
+        timestamp = query.created_at#.split(" ")[0]
+
+        job = self.get_job_by_query(query_pid)
+
+        # simulating updated records
+        updated = self.process_graphs_service.get_updated(user_id=user_id,
+                                                          process_graph_id=job.process_graph_id)
+
+        deleted_cfg = self.process_graphs_service.get_deleted(user_id=user_id,
+                                                          process_graph_id=job.process_graph_id)
+
+        if deleted:
+            deleted_cfg = deleted
 
         # Re-execute the query
         response = self.data_service.get_records(
@@ -667,7 +689,9 @@ class JobService:
             name=filter_args["name"],
             spatial_extent=spatial_extent,
             temporal_extent=temporal,
-            timestamp=timestamp)
+            timestamp=timestamp,
+            updated=updated,
+            deleted=deleted_cfg)
 
         if response["status"] == "error":
             raise Exception(response)

@@ -177,16 +177,54 @@ class DataService:
                 response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
                 response["execution-time"] = timestamp
 
-            # spatial_extent = [49.041469, 9.497681, 46.517296, 17.171631]
+            return {
+                "status": "success",
+                "code": 200,
+                "data": response
+            }
+        except ValidationError as exp:
+            return ServiceException(400, user_id, str(exp), internal=False,
+                                    links=["#tag/EO-Data-Discovery/paths/~1collections~1{name}/get"]).to_dict()
 
-            # temporal = "{}/{}".format('2017-01-01', '2017-01-31')
+    @rpc
+    def get_product_detail_filelist_updated(self, user_id: str = None, name: str = None) -> dict:
+        """The request will ask the back-end for further details about a dataset.
 
-            # product_record = self.get_records(
-            #    detail="full",
-            #    user_id=user_id,
-            #    name=name,
-            #    spatial_extent=spatial_extent,
-            #    temporal_extent=temporal)
+        Keyword Arguments:
+            user_id {str} -- The user id (default: {None})
+            name {str} -- The product identifier (default: {None})
+
+        Returns:
+            dict -- The product or a serialized exception
+        """
+        # Query Store addition:
+        user_id = "openeouser"
+        querydata = self.jobs_service.get_querydata_by_pid(name)
+        dataset = self.jobs_service.get_dataset_by_pid(name)
+        timestamp = self.jobs_service.get_querytimestamp_by_pid(name)
+
+        result_set = None
+
+        if querydata:
+            pid = name
+            result_set = self.jobs_service.reexecute_query(user_id, pid, deleted=True)
+            name = dataset
+
+        try:
+            name = self.arg_parser.parse_product(name)
+            product_record = self.csw_session.get_product(name)
+            response = ProductRecordSchema().dump(product_record).data
+
+            if result_set:
+                response["input_files"] = result_set
+            if querydata:
+                response["query"] = querydata
+                response.pop('spatial_extent', None)
+                response.pop('temporal_extent', None)
+                response.pop('bands', None)
+                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
+                response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
+                response["execution-time"] = timestamp
 
             return {
                 "status": "success",
@@ -196,8 +234,6 @@ class DataService:
         except ValidationError as exp:
             return ServiceException(400, user_id, str(exp), internal=False,
                                     links=["#tag/EO-Data-Discovery/paths/~1collections~1{name}/get"]).to_dict()
-        # except Exception as exp:
-        #    return ServiceException(500, user_id, str(exp)).to_dict()
 
     @rpc
     def get_records(self, user_id: str=None, name: str=None, detail: str="full", 
@@ -271,7 +307,7 @@ class DataService:
                 end = None
 
             if timestamp:
-                timestamp = datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S.%f')
+                timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
 
             orig_query = self.csw_session.get_query(
                 name, spatial_extent, start, end, timestamp=str(timestamp))

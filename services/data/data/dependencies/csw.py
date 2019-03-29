@@ -159,7 +159,7 @@ class CSWHandler:
             list -- The records data
         """
 
-        date_filter_timestamp = datetime.strptime(timestamp, '%Y-%m-%d-%H:%M:%S.%f')
+        date_filter_timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
 
         records=self._get_records(product, bbox, start, end)
 
@@ -274,11 +274,12 @@ class CSWHandler:
         Returns:
             list -- The returned record or product data
         """
+        csw_mockup_url = "http://bgoesswe:5000/" # self.csw_server_uri
 
         # Parse the XML by injecting iteration dependend variables
         xml_request=xml_base.format(
             children=filter_parsed, output_schema=output_schema, start_position=start_position)
-        response=post(self.csw_server_uri, data=xml_request)
+        response=post(csw_mockup_url, data=xml_request)
 
         # Response error handling
         if not response.ok:
