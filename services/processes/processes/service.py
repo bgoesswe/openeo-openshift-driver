@@ -359,3 +359,44 @@ class ProcessesGraphService:
             }
         except Exception as exp:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
+
+    @rpc
+    def get_process_graph(self, user_id: str, process_graph_id: str):
+        user_id = "openeouser"
+
+        try:
+            process_graph = self.db.query(ProcessGraph).filter_by(id=process_graph_id).first()
+
+            return str(process_graph.process_graph)
+
+        except Exception as exp:
+            return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
+
+    @rpc
+    def get_updated(self, user_id: str, process_graph_id: str):
+        user_id = "openeouser"
+
+        try:
+            process_graph = self.db.query(ProcessGraph).filter_by(id=process_graph_id).first()
+
+            if "updated" in process_graph.process_graph:
+                return str(process_graph.process_graph["updated"])
+            else:
+                return None
+        except Exception as exp:
+            return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
+
+    @rpc
+    def get_deleted(self, user_id: str, process_graph_id: str):
+        user_id = "openeouser"
+
+        try:
+            process_graph = self.db.query(ProcessGraph).filter_by(id=process_graph_id).first()
+
+            if "deleted" in process_graph.process_graph:
+                return process_graph.process_graph["deleted"]
+            else:
+                return False
+
+        except Exception as exp:
+            return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()

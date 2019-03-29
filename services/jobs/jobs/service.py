@@ -246,7 +246,17 @@ class JobService:
                 temporal = "{}/{}".format(filter_args["time"]["extent"][0], filter_args["time"]["extent"][1])
 
                 now = datetime.datetime.now()
-                now = now.strftime("%Y-%m-%d")
+                now = now.strftime('%Y-%m-%d-%H:%M:%S.%f')
+
+                # simulating updated records
+                updated = self.process_graphs_service.get_updated(user_id=user_id,
+                                                                  process_graph_id=job.process_graph_id)
+
+                message = str(updated)
+                deleted = self.process_graphs_service.get_deleted(user_id=user_id,
+                                                                  process_graph_id=job.process_graph_id)
+
+                message = str(deleted)
 
                 response = self.data_service.get_records(
                     detail="file_path",
@@ -254,7 +264,9 @@ class JobService:
                     name=filter_args["name"],
                     spatial_extent=spatial_extent,
                     temporal_extent=temporal,
-                    timestamp=now)
+                    timestamp=now,
+                    updated=updated,
+                    deleted=deleted)
 
                 if response["status"] == "error":
                     raise Exception(response)
@@ -319,7 +331,7 @@ class JobService:
         context_model['openeo_api'] = "0.3.1"
         context_model['job_id'] = job_id
 
-        with open("requirements.txt") as f:
+        with open("req.txt") as f:
             content = f.readlines()
 
         code_env = [x.strip() for x in content]
@@ -586,6 +598,20 @@ class JobService:
 
         if query:
             query = str(query.normalized)
+
+        return query
+
+    @rpc
+    def get_origquerydata_by_pid(self, query_pid):
+        """
+            Returns original query of a given Query PID.
+            :param query_pid: String Query PID
+            :return: query: String of the original query.
+        """
+        query = self.db.query(Query).filter_by(pid=query_pid).first()
+
+        if query:
+            query = str(query.original)
 
         return query
 
