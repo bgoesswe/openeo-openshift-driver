@@ -35,6 +35,9 @@ with ctx:
     gateway.add_endpoint("/version/<timestamp>", func=rpc.jobs.version, auth=False, validate=False)
     gateway.add_endpoint("/resetjobsdb", func=rpc.jobs.resetdb, auth=False, validate=False)
     gateway.add_endpoint("/resetpgdb", func=rpc.processes.resetdb, auth=False, validate=False)
+    gateway.add_endpoint("/updaterecord", func=rpc.process_graphs.updaterecord, auth=True, validate=True, methods=["POST"])
+    #gateway.add_endpoint("/updaterecord", func=rpc.data.updaterecord, auth=False, validate=False, methods=["POST"])
+    gateway.add_endpoint("/updatestate", func=rpc.data.updatestate, auth=False, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False, methods=["POST"])
 

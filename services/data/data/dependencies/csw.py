@@ -11,6 +11,7 @@ from ..models import ProductRecord, Record, FilePath, SpatialExtent, TemporalExt
 from .xml_templates import xml_base, xml_and, xml_series, xml_product, xml_begin, xml_end, xml_bbox, xml_timestamp
 from .bands import BandsExtractor
 
+import logging
 
 class CWSError(Exception):
     ''' CWSError raises if a error occures while querying the CSW server. '''
@@ -25,9 +26,25 @@ class CSWHandler:
     required output format.
     """
 
+
+
     def __init__(self, csw_server_uri: str):
         self.csw_server_uri = csw_server_uri
         self.bands_extractor = BandsExtractor()
+        self.updatetime = None
+        self.deleted = False
+
+    def set_updatetime(self, updatetime):
+        self.updatetime = updatetime
+
+    def set_deleted(self, deleted):
+        self.deleted = deleted
+
+    def get_updatetime(self):
+        return self.updatetime
+
+    def get_deleted(self):
+        return self.deleted
 
     def get_all_products(self) -> list:
         """Returns all products available at the back-end.
@@ -76,11 +93,24 @@ class CSWHandler:
                 crs="EPSG:4326"
             ),
             temporal_extent="{0}/{1}".format(data["dc:date"], 
-                                             datetime.now().strftime('%Y-%m-%d')),
+                                             datetime.utcnow().strftime('%Y-%m-%d')),
             bands=self.bands_extractor.get_bands(data_id)
         )
 
         return product_record
+
+    def get_mockup_state(self):
+        """
+            Returns the current version of the back end.
+            :return: version_info: Dict of the current back end version.
+        """
+        import json
+        state = None
+
+        with open('mockup.json', 'r') as f:
+            state = json.load(f)
+
+        return state
 
     def get_records_full(self, product: str, bbox: list, start: str, end: str) -> list:
         """Returns the full information of the records of the specified products
@@ -159,8 +189,14 @@ class CSWHandler:
             list -- The records data
         """
 
+        state = self.get_mockup_state()
+        #logging.info("Mockupstate: {}".format(str(state)))
+        updated = state["updatetime"]
+        deleted = state["deleted"]
+        logging.info("Deleted: {}".format(str(deleted)))
+        logging.info("Updatetime: {}".format(str(updated)))
         date_filter_timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-
+        logging.info("Query Timestamp: {}".format(str(timestamp)))
         records=self._get_records(product, bbox, start, end)
 
         # TODO: Better solution than this bulls** xml paths
@@ -176,9 +212,6 @@ class CSWHandler:
             item["gmd:identificationInfo"]["gmd:MD_DataIdentification"]["gmd:citation"]["gmd:CI_Citation"]["gmd:date"][
                 "gmd:CI_Date"]["gmd:date"]["gco:Date"]
 
-            if updated and first:
-                data_timestamp = updated
-
             date_data_timestamp = datetime.strptime(data_timestamp, "%Y-%m-%d")
 
             if date_data_timestamp <= date_filter_timestamp:
@@ -191,6 +224,29 @@ class CSWHandler:
                             timestamp=data_timestamp
                         )
                     )
+                else:
+                    logging.info("Ignored first file")
+            else:
+                logging.info("{} > {}".format(data_timestamp,timestamp))
+
+            if updated and first:
+                path = path + "_new"
+                name = name + "_new"
+
+                date_data_timestamp = datetime.strptime(updated, '%Y-%m-%d %H:%M:%S.%f')
+
+                if date_data_timestamp <= date_filter_timestamp:
+                    logging.info("FIRST: Appended additional file")
+                    response.append(
+                        FilePath(
+                            date=date,
+                            name=name,
+                            path=path,
+                            timestamp=data_timestamp
+                        ))
+                else:
+                    logging.info("FIRST: {} > {}".format(data_timestamp, timestamp))
+
             first = False
 
         return response
@@ -274,12 +330,11 @@ class CSWHandler:
         Returns:
             list -- The returned record or product data
         """
-        csw_mockup_url = "http://bgoesswe:5000/" # self.csw_server_uri
 
         # Parse the XML by injecting iteration dependend variables
         xml_request=xml_base.format(
             children=filter_parsed, output_schema=output_schema, start_position=start_position)
-        response=post(csw_mockup_url, data=xml_request)
+        response=post(self.csw_server_uri, data=xml_request)
 
         # Response error handling
         if not response.ok:

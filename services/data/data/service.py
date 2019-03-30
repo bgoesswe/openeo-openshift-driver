@@ -9,6 +9,8 @@ from .schemas import ProductRecordSchema, RecordSchema, FilePathSchema
 from .dependencies.csw import CSWSession, CWSError
 from .dependencies.arg_parser import ArgParserProvider, ValidationError
 
+import json
+import logging
 
 
 
@@ -58,6 +60,9 @@ class DataService:
     csw_session = CSWSession()
 
     jobs_service = RpcProxy("jobs")
+
+    deleted = False
+    updatetime = None
 
     @rpc
     def get_all_products(self, user_id: str=None) -> Union[list, dict]:
@@ -320,3 +325,91 @@ class DataService:
         except ValidationError as exp:
             return ServiceException(400, user_id, str(exp), internal=False,
                                     links=["#tag/EO-Data-Discovery/paths/~1data~1{name}~1records/get"]).to_dict()
+
+    @rpc
+    def updaterecord(self, process_graph: dict={}):
+        user_id = "openeouser"
+        try:
+            if "updatetime" in process_graph:
+                self.csw_session.set_updatetime(process_graph["updatetime"])
+            if "deleted" in process_graph:
+                self.csw_session.set_deleted(process_graph["deleted"])
+
+            return {
+                "status": "success",
+                "code": 201,
+                "headers": {"Location": ""}
+            }
+        except Exception as exp:
+            return ServiceException(500, user_id, str(exp),
+                                    links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
+
+
+    @rpc
+    def set_deleted(self, deleted: bool):
+        #logging.basicConfig(level=logging.DEBUG)
+
+        #logging.info(deleted)
+        #self.csw_session.set_deleted(deleted)
+        state = None
+
+        with open('mockup.json', 'r') as f:
+            state = json.load(f)
+        state["deleted"] = deleted
+        with open('mockup.json', 'w') as fp:
+            json.dump(state, fp)
+        #self.deleted = deleted
+        #logging.info(deleted)
+
+
+    @rpc
+    def set_updated(self, updated: str):
+        #logging.basicConfig(level=logging.DEBUG)
+
+        #logging.info(updated)
+        state = None
+        #self.csw_session.set_updatetime(updated)
+        #self.updatetime = updated
+        if updated:
+            updated = datetime.utcnow()
+            updated = updated.strftime('%Y-%m-%d %H:%M:%S.%f')
+        #logging.info(self.updatetime)
+        with open('mockup.json', 'r') as f:
+            state = json.load(f)
+        state["updatetime"] = updated
+        with open('mockup.json', 'w') as fp:
+            json.dump(state, fp)
+        #logging.info(updated)
+
+
+    @rpc
+    def updatestate(self):
+        """
+            Returns the current version of the back end.
+            :return: version_info: Dict of the current back end version.
+        """
+
+
+        state = None
+
+        with open('mockup.json', 'r') as f:
+            state = json.load(f)
+
+        return {
+            "status": "success",
+            "code": 200,
+            "data": state
+        }
+
+    def get_mockup_state(self):
+        """
+            Returns the current version of the back end.
+            :return: version_info: Dict of the current back end version.
+        """
+
+        state = None
+
+        with open('mockup.json', 'r') as f:
+            state = json.load(f)
+
+        return state

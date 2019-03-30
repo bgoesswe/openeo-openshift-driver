@@ -10,7 +10,7 @@ from .models import Base, Process, Parameter, ProcessGraph, ProcessNode
 from .schema import ProcessSchema, ProcessNodeSchema, ProcessGraphShortSchema, ProcessGraphFullSchema
 from .dependencies import NodeParser, Validator
 from jsonschema import ValidationError
-
+import logging
 
 class ServiceException(Exception):
     """ServiceException raises if an exception occured while processing the 
@@ -400,3 +400,27 @@ class ProcessesGraphService:
 
         except Exception as exp:
             return ServiceException(ProcessesService.name, 500, user_id, str(exp)).to_dict()
+
+    @rpc
+    def updaterecord(self, user_id: str, process_graph: dict):
+        user_id = "openeouser"
+     #   try:
+
+        logging.basicConfig(level=logging.DEBUG)
+
+        logging.info(str(process_graph))
+        if "updatetime" in process_graph:
+            self.data_service.set_updated(process_graph["updatetime"])
+            logging.info("updatetime")
+        if "deleted" in process_graph:
+            self.data_service.set_deleted(process_graph["deleted"])
+            logging.info("deleted")
+        return {
+            "status": "success",
+            "code": 201,
+            "headers": {"Location": ""}
+        }
+      #  except Exception as exp:
+       #     return ServiceException(500, user_id, str(exp),
+        #                                links=["#tag/Job-Management/paths/~1jobs/post"]).to_dict()
+
