@@ -40,6 +40,8 @@ with ctx:
     gateway.add_endpoint("/updatestate", func=rpc.data.updatestate, auth=False, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False)
     #gateway.add_endpoint("/jobs/<job_id>/diff", func=rpc.jobs.diff, auth=True, validate=False, methods=["POST"])
+    gateway.add_endpoint("/updatebackend", func=rpc.jobs.updatebackend, auth=True, validate=True,
+                         methods=["POST"])
 
 
 

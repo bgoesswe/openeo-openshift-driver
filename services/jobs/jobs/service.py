@@ -189,6 +189,46 @@ class JobService:
             "headers": {"Location": "Jobs deleted"}
         }
 
+
+    @rpc
+    def updatebackend(self, user_id: str, process_graph: dict):
+        user_id = "openeouser"
+
+        logging.info(str(process_graph))
+
+        if "package" in process_graph:
+            if process_graph["package"]: # add dependency to req.txt file.
+                req_file = open("req.txt", "a")
+                req_file.write("{}\n".format(process_graph["package"]))
+                req_file.close()
+            else: # remove last line of req.txt file.
+                req_file = open("file")
+                lines = req_file.readlines()
+                req_file.close()
+                w = open("file", 'w')
+                w.writelines([item for item in lines[:-1]])
+                w.close()
+            logging.info("updatetime")
+
+        git_cmd = "git --git-dir=implementation_backend/.git "
+
+
+
+        CMD_GIT_BRANCH = "{0} commit -am \"test\"".format(git_cmd)
+
+        logging.info(CMD_GIT_BRANCH)
+        logging.info("Executing Git commit...")
+        # Executing the git commit
+        self.run_cmd(CMD_GIT_BRANCH)
+        logging.info("Executed Git commit !")
+
+        return {
+            "status": "success",
+            "code": 201,
+            "headers": {"Location": ""}
+        }
+
+
     @rpc
     def process(self, user_id: str, job_id: str):
             """ Execution of the job with the given job_id.
@@ -368,7 +408,7 @@ class JobService:
         """
 
         try:
-            repo = Repo("openeo-openshift-driver/")
+            repo = Repo("implementation_backend/")
 
             timestamp = datetime.datetime.strptime(timestamp, '%Y%m%d%H%M%S.%f')
             timestamp = pytz.utc.localize(timestamp)
@@ -763,7 +803,7 @@ class JobService:
         """
 
         # Used git commands
-        git_cmd = "git --git-dir=openeo-openshift-driver/.git "
+        git_cmd = "git --git-dir=implementation_backend/.git "
 
         CMD_GIT_URL = "{0} config --get remote.origin.url".format(git_cmd)
         CMD_GIT_BRANCH = "{0} branch".format(git_cmd)
