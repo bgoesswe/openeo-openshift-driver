@@ -70,40 +70,51 @@ class JobService:
     @rpc
     def get(self, user_id: str, job_id: str):
         user_id = "openeouser"
-        try:
-            job = self.db.query(Job).filter_by(id=job_id).first()
+        #try:
+        job = self.db.query(Job).filter_by(id=job_id).first()
 
-            valid, response = self.authorize(user_id, job_id, job)
-            if not valid: 
-                return response
+        valid, response = self.authorize(user_id, job_id, job)
+        if not valid:
+            return response
 
-            response = self.process_graphs_service.get(user_id, job.process_graph_id)
-            if response["status"] == "error":
-               return response
-            
-            job.process_graph = response["data"]["process_graph"]
+        response = self.process_graphs_service.get(user_id, job.process_graph_id)
+        if response["status"] == "error":
+            return response
 
-            query = self.get_input_pid(job_id)
+        job.process_graph = response["data"]["process_graph"]
 
-            result = JobSchemaFull().dump(job).data
+        query = self.get_input_pid(job_id)
 
-            if query:
-                result["input_data"] = query.pid
+        result = JobSchemaFull().dump(job).data
 
-            version_timestamp = datetime.datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+        if query:
+            result["input_data"] = query.pid
 
-            version_timestamp = version_timestamp.strftime('%Y%m%d%H%M%S.%f')
-
-            result["metrics"]["back_end_timestamp"] = version_timestamp
-
+        if "metrics" in result:
+            if "start_time" in result["metrics"]:
+                version_timestamp = datetime.datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+                version_timestamp = version_timestamp.strftime('%Y%m%d%H%M%S.%f')
+                result["metrics"]["back_end_timestamp"] = version_timestamp
+            else:
+                return {
+                    "status": "success",
+                    "code": 202,
+                    "data": result
+                }
+        else:
             return {
                 "status": "success",
-                "code": 200,
+                "code": 202,
                 "data": result
             }
-        except Exception as exp:
-            return ServiceException(500, user_id, str(exp),
-                links=["#tag/Job-Management/paths/~1jobs~1{job_id}/get"]).to_dict()
+        return {
+            "status": "success",
+            "code": 200,
+            "data": result
+        }
+        #except Exception as exp:
+        #    return ServiceException(500, user_id, str(exp),
+        #        links=["#tag/Job-Management/paths/~1jobs~1{job_id}/get"]).to_dict()
 
     @rpc
     def modify(self, user_id: str, job_id: str, process_graph: dict, title: str=None, description: str=None, 
@@ -635,7 +646,10 @@ class JobService:
         """
         queryjob = self.db.query(QueryJob).filter_by(job_id=job_id).first()
 
-        return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
+        if queryjob:
+            return self.db.query(Query).filter_by(pid=queryjob.query_pid).first()
+        else:
+            return None
 
     def get_job_by_query(self, query_pid):
         """
