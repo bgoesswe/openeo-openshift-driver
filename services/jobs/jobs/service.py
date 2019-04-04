@@ -971,6 +971,7 @@ class JobService:
     def processing(self, filter_args, job_id):
         '''Returns max time dataset'''
 
+        from PIL import Image
         logging.basicConfig(filename='{}.log'.format(job_id), level=logging.DEBUG)
 
         logging.info("before spatial")
@@ -996,6 +997,10 @@ class JobService:
         logging.info("API-VERSION: 0.3.1")
         logging.info("INTERPRETER: Python 3.7.1")
 
+        im = Image.fromarray(min_time_data, mode='F')
+
+        im.save("{}_result.tiff".format(job_id), "TIFF")
+        logging.info("saved the result.tiff")
         #np.savetxt('{}.tif'.format(job_id), min_time_data, delimiter=',')
 
         logging.info("FINISHED: {}".format(str(datetime.datetime.utcnow())))
