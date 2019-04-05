@@ -404,8 +404,13 @@ class JobService:
 
         context_model = {}
         # MOCK UPs of the Processing
-        process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
-        output_hash = sha256(("OUTPUT"+str(process_graph)).encode('utf-8')).hexdigest()
+        # process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
+        hashfkt = sha256()
+        with open("/usr/src/app/results/{}_result.tiff".format(job_id), 'rb') as afile:
+            buf = afile.read()
+            hashfkt.update(buf)
+
+        output_hash = hashfkt.hexdigest()
 
         context_model['output_data'] = output_hash
         context_model['input_data'] = query.pid
@@ -421,9 +426,8 @@ class JobService:
 
         context_model['interpreter'] = "Python 3.7.1"
         context_model['start_time'] = str(job.created_at)
-        context_model['end_time'] = str(job.created_at+datetime.timedelta(1, 30))#datetime.datetime.fromtimestamp(time.time())
-
-        # cm = get_job_cm(job_id)
+        # Mock Up
+        context_model['end_time'] = str(datetime.datetime.fromtimestamp(time.time()))
 
         return context_model
 
@@ -973,7 +977,7 @@ class JobService:
 
         from PIL import Image
         logging.basicConfig(filename='{}.log'.format(job_id), level=logging.DEBUG)
-
+        logging.info("START: {}".format(str(datetime.datetime.utcnow())))
         logging.info("before spatial")
         west = filter_args["extent"]["extent"]["west"]
         south = filter_args["extent"]["extent"]["south"]
@@ -998,9 +1002,9 @@ class JobService:
         logging.info("INTERPRETER: Python 3.7.1")
 
         im = Image.fromarray(min_time_data, mode='F')
-
-        im.save("{}_result.tiff".format(job_id), "TIFF")
-        logging.info("saved the result.tiff")
+        logging.info("Creating image {}".format(im))
+        im.save("/usr/src/app/results/{}_result.tiff".format(job_id), "TIFF")
+        logging.info("saved the results/{}_result.tiff file".format(job_id))
         #np.savetxt('{}.tif'.format(job_id), min_time_data, delimiter=',')
 
         logging.info("FINISHED: {}".format(str(datetime.datetime.utcnow())))
