@@ -126,8 +126,8 @@ class DataService:
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
                 response.pop('bands', None)
-                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
-                response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
+                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/data/{}".format(pid)
+                response["result"] = "http://openeo.local.127.0.0.1.nip.io/data/{}/result".format(pid)
                 response["execution-time"] = timestamp
                 response["original_query"] = orig_query
 
@@ -178,8 +178,8 @@ class DataService:
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
                 response.pop('bands', None)
-                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
-                response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
+                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/data/{}".format(pid)
+                response["result"] = "http://openeo.local.127.0.0.1.nip.io/data/{}/result".format(pid)
                 response["execution-time"] = timestamp
 
             return {
@@ -227,8 +227,8 @@ class DataService:
                 response.pop('spatial_extent', None)
                 response.pop('temporal_extent', None)
                 response.pop('bands', None)
-                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}".format(pid)
-                response["result"] = "http://openeo.local.127.0.0.1.nip.io/collections/{}/result".format(pid)
+                response["pid"] = "http://openeo.local.127.0.0.1.nip.io/data/{}".format(pid)
+                response["result"] = "http://openeo.local.127.0.0.1.nip.io/data/{}/result".format(pid)
                 response["execution-time"] = timestamp
 
             return {

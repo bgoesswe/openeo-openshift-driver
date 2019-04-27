@@ -24,6 +24,7 @@ def upgrade():
         sa.Column('description', sa.String(), nullable=True),
         sa.Column('process_graph_id', sa.String(), nullable=False),
         sa.Column('output', sa.JSON(), default={"format": "GTiff"}),
+        sa.Column('context_model', sa.JSON(), default={"format": "GTiff"}),
         sa.Column('plan', sa.String(), default="free"),
         sa.Column('budget', sa.Integer(), default=0),
         sa.Column('current_costs', sa.Integer(), default=0),

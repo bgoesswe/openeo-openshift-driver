@@ -91,10 +91,13 @@ class JobService:
             result["input_data"] = query.pid
 
         if "metrics" in result:
-            if "start_time" in result["metrics"]:
-                version_timestamp = datetime.datetime.strptime(result["metrics"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
+            result["context_model"] = result["metrics"]
+            result.pop("metrics")
+
+            if "start_time" in result["context_model"]:
+                version_timestamp = datetime.datetime.strptime(result["context_model"]["start_time"], '%Y-%m-%d %H:%M:%S.%f')
                 version_timestamp = version_timestamp.strftime('%Y%m%d%H%M%S.%f')
-                result["metrics"]["back_end_timestamp"] = version_timestamp
+                result["context_model"]["back_end_timestamp"] = version_timestamp
             else:
                 return {
                     "status": "success",
@@ -313,7 +316,7 @@ class JobService:
 
                 end = datetime.datetime.utcnow()
                 delta = end - start
-                message = str(int(delta.total_seconds() * 1000))
+                message = str(int(delta.microseconds))
                 start = datetime.datetime.utcnow()
                 logging.info("Executed Timestamp: {}".format(timestamp))
                 response = self.data_service.get_records(
@@ -361,27 +364,30 @@ class JobService:
 
                 end = datetime.datetime.utcnow()
                 delta = end - start
-                message += ";" + str(int(delta.total_seconds() * 1000))
+                message += ";" + str(int(delta.microseconds))
 
                 start = datetime.datetime.utcnow()
 
                 # Query Handler, creates a new query or returns an equal old one.
-                query = self.handle_query(response["data"], filter_args, orig_query, now)
+                query, data_timings = self.handle_query(response["data"], filter_args, orig_query, now)
 
                 # Assignes the Query to the Job
                 self.assign_query(query.pid, job_id)
                 end = datetime.datetime.utcnow()
                 delta = end - start
-                message += ";" + str(int(delta.total_seconds() * 1000))
+                message += ";" + str(int(delta.microseconds))
 
                 start = datetime.datetime.utcnow()
                 # Create Context model and assign it to the Job.
-                job.metrics = self.create_context_model(job_id)
+                job.metrics, cm_timings = self.create_context_model(job_id)
                 end = datetime.datetime.utcnow()
                 delta = end - start
 
                 # debugging output DELME
-                message += ";" + str(int(delta.total_seconds() * 1000))
+                message += ";" + str(int(delta.microseconds))
+
+                message += ";data;" + data_timings
+                message += ";cm;" + cm_timings
 
                 job.status = str(message)
                 self.db.commit()
@@ -399,9 +405,14 @@ class JobService:
             :return: context_model: Dict representing the context model entry.
         """
         user_id = "openeouser"
+        start = datetime.datetime.utcnow()
         job = self.db.query(Job).filter_by(id=job_id).first()
         query = self.get_input_pid(job_id)
 
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message = str(int(delta.microseconds))
         context_model = {}
         # MOCK UPs of the Processing
         # process_graph = self.process_graphs_service.get(user_id, job.process_graph_id)
@@ -412,11 +423,20 @@ class JobService:
 
         output_hash = hashfkt.hexdigest()
 
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";"+str(int(delta.microseconds))
+
         context_model['output_data'] = output_hash
         context_model['input_data'] = query.pid
         context_model['openeo_api'] = "0.3.1"
         context_model['job_id'] = job_id
 
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
         with open("req.txt") as f:
             content = f.readlines()
 
@@ -424,12 +444,21 @@ class JobService:
 
         context_model['code_env'] = code_env
 
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
+
         context_model['interpreter'] = "Python 3.7.1"
         context_model['start_time'] = str(job.created_at)
         # Mock Up
         context_model['end_time'] = str(datetime.datetime.fromtimestamp(time.time()))
 
-        return context_model
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        message += ";" + str(int(delta.microseconds))
+
+        return context_model, message
 
     @rpc
     def version_current(self):
@@ -477,6 +506,34 @@ class JobService:
             return None
 
         return git_info
+
+    @rpc
+    def evaluate_data_resulthash(self, max_files):
+
+        if not max_files:
+            max_files = 10000
+        else:
+            max_files = int(max_files)
+
+        entry = {'date': '2017-05-04', 'name': 'S2A_MSIL1C_20170504T101031_N0205_R022_T32TPR_20170504T101349_new',
+                 'timestamp': '2017-05-08',
+                 'path': '/eodc/products/copernicus.eu/s2a_prd_msil1c/2017/05/04/S2A_MSIL1C_20170504T101031_N0205_R022_T32TPR_20170504T101349.zip_new'}
+
+        file_list = []
+
+        for i in range(0, max_files, 10000):
+            milliseconds = 0
+            count = 0
+            for i in range(0, max_files, 10):
+                file_list.append(entry)
+                start = datetime.datetime.utcnow()
+                self.create_result_hash(file_list)
+                end = datetime.datetime.utcnow()
+                delta = end - start
+                milliseconds += delta.microseconds
+                count += 1
+            message = "{} ; {}".format(i, str(milliseconds/count))
+            logging.info(message)
 
 
     @rpc
@@ -595,6 +652,9 @@ class JobService:
         """
 
         # remove query independent filter data
+
+        start = datetime.datetime.utcnow()
+
         if "data_pid" in filter_args:
             filter_args.pop("data_pid")
 
@@ -603,12 +663,28 @@ class JobService:
         normalized = self.order_dict(filter_args)
         normalized = str(normalized)
         normalized = normalized.strip()
-        print(normalized)
+
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message = str(int(delta.microseconds))
+
+        #print(normalized)
         norm_hash = sha256(normalized.encode('utf-8')).hexdigest()
-        print(norm_hash)
+        #print(norm_hash)
+
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";"+str(int(delta.microseconds))
 
         # Remove all characters from the result files list that are not relevant and create a hash.
         result_hash = self.create_result_hash(result_files)
+
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
 
         # Look for Query entries that have an equal query hash and result hash.
         existing = self.db.query(Query).filter_by(norm_hash=norm_hash, result_hash=result_hash).first()
@@ -616,12 +692,28 @@ class JobService:
         if existing:
             return existing
 
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
+
         # extract additional information from the input data.
         dataset_pid = str(filter_args["name"])
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
         orig_query = str(orig_query)
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
         #logging.info("RESULTFILES {}".format(result_files))
         metadata = str({"result_files": len(result_files.split("}, {"))})
-
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        start = end
+        message += ";" + str(int(delta.microseconds))
         new_query = Query(dataset_pid, orig_query, normalized, norm_hash,
                  result_hash, metadata)
         new_query.created_at = timestamp
@@ -629,7 +721,13 @@ class JobService:
         self.db.add(new_query)
         self.db.commit()
 
-        return new_query
+        end = datetime.datetime.utcnow()
+        delta = end - start
+        message += ";" + str(int(delta.microseconds))
+
+        logging.info("DATA-TIMING: "+message)
+
+        return new_query, message
 
     def assign_query(self, query_pid, job_id):
         """
